@@ -92,6 +92,21 @@ def wait_ready(port: int, timeout: float = 90.0) -> bool:
     return False
 
 
+def redirect_output() -> None:
+    """В оконном приложении (без консоли) sys.stdout/stderr равны None, и любая попытка
+    что-то вывести — в том числе настройка логов uvicorn — падает. Направляем вывод в журнал."""
+    if sys.stdout is not None and sys.stderr is not None:
+        return
+    try:
+        stream = open(user_data_dir().parent / "skud.log", "a", encoding="utf-8", buffering=1)
+    except Exception:
+        stream = open(os.devnull, "w")
+    if sys.stdout is None:
+        sys.stdout = stream
+    if sys.stderr is None:
+        sys.stderr = stream
+
+
 def set_app_mutex() -> None:
     """Именованная метка работающего приложения — по ней установщик закрывает его при обновлении."""
     if os.name != "nt":
@@ -105,6 +120,7 @@ def set_app_mutex() -> None:
 
 
 def main() -> int:
+    redirect_output()
     set_app_mutex()
     configure_environment()
     port = pick_port()

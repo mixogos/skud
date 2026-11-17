@@ -20,3 +20,6 @@ backend/data-demo/
 *.log
 .DS_Store
 Thumbs.db
+
+# Папка Start (готовая сборка, не в git)
+Start/
