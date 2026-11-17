@@ -11,7 +11,7 @@ export interface FaceEvent {
   matched_face_id: number | null; confidence: number | null; matched_lists: number[]; acknowledged: boolean;
   acknowledged_date: string | null; acknowledged_reaction: string; episode_id: number | null; looks_like_confidence?: number | null;
   access: "granted" | "denied" | null; access_reason: string; camera_id: number | null; liveness: number | null;
-  features: { age?: number; gender?: { name: "male" | "female"; confidence: number }; medmask?: { name: "none" | "correct"; confidence: number } };
+  features: { age?: number; age_group?: string; gender?: { name: "male" | "female"; confidence: number }; medmask?: { name: "none" | "correct"; confidence: number } };
 }
 
 /** Краткая строка атрибутов лица: «жен., 28 лет, в маске». */
@@ -19,7 +19,8 @@ export function featuresText(event: FaceEvent): string {
   const f = event.features ?? {};
   const parts: string[] = [];
   if (f.gender) parts.push(f.gender.name === "male" ? "муж." : "жен.");
-  if (f.age != null) parts.push(`${f.age} ${f.age % 10 === 1 && f.age % 100 !== 11 ? "год" : f.age % 10 >= 2 && f.age % 10 <= 4 && (f.age % 100 < 12 || f.age % 100 > 14) ? "года" : "лет"}`);
+  if (f.age_group) parts.push(`${f.age_group} лет`);
+  else if (f.age != null) parts.push(`${f.age} ${f.age % 10 === 1 && f.age % 100 !== 11 ? "год" : f.age % 10 >= 2 && f.age % 10 <= 4 && (f.age % 100 < 12 || f.age % 100 > 14) ? "года" : "лет"}`);
   if (f.medmask?.name === "correct") parts.push("в маске");
   return parts.join(", ");
 }
@@ -257,7 +258,9 @@ export function EventModal({ event, onClose, onChanged, onSearch }: { event: Fac
           {event.video_archive_id && <><dt>Видеофайл</dt><dd>№ {event.video_archive_id}, <span className="mono">{event.video_offset?.toFixed(1)} с</span> от начала</dd></>}
           {event.access && <><dt>Проход</dt><dd><AccessBadge event={event} /> <span className="small muted">{event.access_reason}</span></dd></>}
           {event.features?.gender && <><dt>Пол</dt><dd>{event.features.gender.name === "male" ? "мужской" : "женский"} <span className="small muted mono">{pct(event.features.gender.confidence)}</span></dd></>}
-          {event.features?.age != null && <><dt title="Оценка по одному кадру, ошибка в несколько лет — обычное дело">Возраст</dt><dd>около <span className="mono">{event.features.age}</span></dd></>}
+          {event.features?.age_group
+            ? <><dt title="Возрастная группа, оценка по одному кадру">Возраст</dt><dd><span className="mono">{event.features.age_group}</span> лет</dd></>
+            : event.features?.age != null && <><dt title="Оценка по одному кадру, ошибка в несколько лет — обычное дело">Возраст</dt><dd>около <span className="mono">{event.features.age}</span></dd></>}
           {event.features?.medmask && <><dt>Маска</dt><dd>{event.features.medmask.name === "correct" ? "есть" : "нет"} <span className="small muted mono">{pct(event.features.medmask.confidence)}</span></dd></>}
           <dt>Качество кадра</dt><dd className="mono">{pct(event.quality)}</dd>
           {event.liveness != null && <><dt title="Вероятность того, что перед камерой живой человек, а не фото или экран">Живость</dt><dd className="mono">{pct(event.liveness)}</dd></>}

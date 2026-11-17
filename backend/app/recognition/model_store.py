@@ -33,7 +33,13 @@ LIVENESS_SHA256 = {
 
 GENDERAGE_FILE = "genderage.onnx"
 MASK_FILE = "mask_detector.onnx"
+# FairFace (ResNet-34, обучена на сбалансированных данных) — точнее по возрасту и полу, чем genderage.
+FAIRFACE_FILE = "fairface.onnx"
 ATTRIBUTE_SOURCES = {
+    FAIRFACE_FILE: (
+        "https://github.com/yakhyo/fairface-onnx/releases/download/weights/fairface.onnx",
+        "9c8c47d437cd310538d233f2465f9ed0524cb7fb51882a37f74e8bc22437fdbf",
+    ),
     GENDERAGE_FILE: (
         "https://huggingface.co/public-data/insightface/resolve/main/models/buffalo_l/genderage.onnx",
         "4fde69b1c810857b88c64a335084f1c3fe8f01246c9a191b48c7bb756d6652fb",
@@ -71,6 +77,10 @@ def genderage_present() -> bool:
 
 def mask_present() -> bool:
     return (models_dir() / MASK_FILE).is_file()
+
+
+def fairface_present() -> bool:
+    return (models_dir() / FAIRFACE_FILE).is_file()
 
 
 def _fetch_verified(name: str, url: str, sha256: str, progress) -> None:
