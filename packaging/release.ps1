@@ -1,4 +1,4 @@
-# Публикация новой версии на GitHub Releases.
+﻿# Публикация новой версии на GitHub Releases.
 # 1) берёт номер версии из backend/app/version.py
 # 2) собирает приложение и установщик seture.exe (packaging\build.ps1)
 # 3) создаёт тег vX.Y.Z и релиз на GitHub с приложенным seture.exe
