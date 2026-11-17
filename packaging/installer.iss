@@ -3,7 +3,7 @@
 ; (сначала должна быть собрана папка dist\SKUD через PyInstaller)
 
 #define AppName "СКУД — распознавание лиц"
-#define AppVersion "0.9.1"
+#define AppVersion "0.9.2"
 #define AppExe "SKUD.exe"
 
 [Setup]

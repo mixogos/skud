@@ -74,14 +74,23 @@ def test_event_attributes_and_filters(client, admin, people):
     def count(**params):
         return client.get("/events/faces/", headers=admin, params=params).json()["count"]
 
-    event = client.get("/events/faces/", headers=admin).json()["results"][0]
-    assert set(event["features"]) == {"age", "gender", "medmask"}
-    assert count() == 6 and count(gender="female") == 3 and count(gender="male") == 3
-    assert count(medmask="none") == 6 and count(medmask="correct") == 0
-    ages = sorted(e["features"]["age"] for e in client.get("/events/faces/", headers=admin).json()["results"])
-    assert count(age_gte=ages[2]) == sum(a >= ages[2] for a in ages)
-    assert count(age_lte=ages[2]) == sum(a <= ages[2] for a in ages)
-    assert count(age_gte=ages[0], age_lte=ages[-1], gender="male") == 3
+    # Атрибуты определяются только на пригодных лицах (крупных и близких к анфас);
+    # у сильно повёрнутых лиц features пустые — это защита от неверных возраста/пола.
+    results = client.get("/events/faces/", headers=admin).json()["results"]
+    assert count() == 6
+    with_features = [e for e in results if e["features"]]
+    assert len(with_features) >= 4  # большинство лиц на групповом фото фронтальные
+    for e in with_features:
+        assert set(e["features"]) == {"age", "gender", "medmask"}
+
+    genders = [e["features"]["gender"]["name"] for e in with_features]
+    assert count(gender="female") == genders.count("female")
+    assert count(gender="male") == genders.count("male")
+    assert count(medmask="none") == len(with_features) and count(medmask="correct") == 0
+
+    ages = sorted(e["features"]["age"] for e in with_features)
+    assert count(age_gte=ages[1]) == sum(a >= ages[1] for a in ages)
+    assert count(age_lte=ages[1]) == sum(a <= ages[1] for a in ages)
     assert client.get("/events/faces/", headers=admin, params={"age_gte": 101}).status_code == 422
 
 

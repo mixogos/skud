@@ -10,6 +10,7 @@ from . import access, episodes, matching, models, storage, webhooks
 from .notifications import broadcaster
 from .recognition import engine as eng
 from .recognition.attributes import get_attributes
+from .video.quality import pose_score
 from .recognition.liveness import get_liveness
 from .settings_store import get_settings
 from .video.processor import TrackResult
@@ -56,6 +57,19 @@ class Registration:
 def register_track(db: DbSession, result: TrackResult, **kwargs) -> models.FaceEvent | None:
     """То же, что process_track, но возвращает только событие (или None)."""
     return process_track(db, result, **kwargs).event
+
+
+# Возраст и пол определяем только на достаточно крупном и близком к анфас лице —
+# иначе модель ошибается (профиль, мелкое или размытое лицо даёт неверные значения).
+ATTR_MIN_FACE = 80    # пикселей по меньшей стороне лица
+ATTR_MIN_POSE = 0.55  # 1 — анфас, 0 — сильный поворот головы
+
+
+def _attributes_reliable(face) -> bool:
+    left, top, right, bottom = face.bbox
+    if min(right - left, bottom - top) < ATTR_MIN_FACE:
+        return False
+    return pose_score(face.landmarks) >= ATTR_MIN_POSE
 
 
 def process_track(
@@ -106,7 +120,10 @@ def process_track(
         return skip("Повторное событие (дедупликация)")
     if result.features is None:
         analyzer = get_attributes()
-        result.features = analyzer.analyze(result.frame, face.bbox) if analyzer is not None else {}
+        if analyzer is not None and _attributes_reliable(face):
+            result.features = analyzer.analyze(result.frame, face.bbox)
+        else:
+            result.features = {}  # лицо мелкое или сильно повёрнуто — возраст и пол не определяем
 
     height, width = result.frame.shape[:2]
     event = models.FaceEvent(
