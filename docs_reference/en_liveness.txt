@@ -1,0 +1,69 @@
+
+
+# Enable Face Liveness Detection
+
+The FindFace Multi face liveness detector tells apart live faces from face representations, such as face images, videos, or masks. The liveness detector estimates face liveness with a certain level of confidence and returns the confidence score along with a binary result real/fake, depending on the pre-defined liveness threshold.
+
+The face liveness detector can be automatically enabled and configured during the installation. If you skipped this step, you can manually enable it later, following the instructions below.
+
+Note
+
+The face liveness detector functions on both GPU- and CPU-acceleration. However, it is much slower on CPU.
+
+In this section:
+
+Enable Face Liveness Detector
+
+Configure Liveness Threshold
+
+## Enable Face Liveness Detector
+
+To enable the face liveness detector, do the following:
+
+Open the /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration file. In the liveness section, specify the neural network models as shown in the example:
+
+GPU
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+liveness:
+  fnk: /usr/share/findface-data/models/faceattr/faceattr.liveness_pacs.v3.gpu.fnk
+  norm: /usr/share/findface-data/models/facenorm/crop2x.v2_maxsize400.gpu.fnk
+...
+
+CPU
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+liveness:
+  fnk: /usr/share/findface-data/models/faceattr/faceattr.liveness_pacs.v3.cpu.fnk
+  norm: /usr/share/findface-data/models/facenorm/crop2x.v2_maxsize400.cpu.fnk
+...
+
+Restart the findface-multi-findface-video-worker-1 container.
+
+sudo docker container restart findface-multi-findface-video-worker-1
+
+## Configure Liveness Threshold
+
+If necessary, you can adjust the liveness threshold in the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file. The liveness detector will estimate face liveness with a certain level of confidence. Depending on the threshold value, it will return a binary result real or fake.
+
+Note
+
+The default value is optimal. Before changing the threshold, we recommend that you seek advice from our experts at support@ntechlab.com.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+FFSECURITY = {
+    ...
+    # feature specific confidence thresholds
+    'LIVENESS_THRESHOLD': 0.885,  # model: [faceattr.liveness_pacs.v3]
+    ...
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+          

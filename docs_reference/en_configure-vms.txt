@@ -1,0 +1,277 @@
+
+
+# Configure Video Recorder
+
+The FindFace Core internal architecture allows for embedding Video Recorder, an additional functionality that records, stores, and plays back video data from cameras.
+
+This section is about the Video Recorder configuration.
+
+In this section:
+
+Enable Video Recorder
+
+Nuances of Disabling Video Recorder
+
+## Enable Video Recorder
+
+To enable Video Recorder, do the following:
+
+Enable the findface-video-worker service to transfer video chunks to the findface-video-storage service.
+
+Important
+
+This setting makes the Video Recorder functionality available over HTTP API. It’s also obligatory if you want to harness Video Recorder as part of the FindFace Multi web interface.
+
+Do the following:
+
+Open the /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration to enable findface-video-worker service that will supply Video Recorder with video.
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+Set enabled: true in the recorder section.
+
+recorder:
+  enabled: true
+  ...
+
+Restart findface-multi-findface-video-worker-1 container.
+
+sudo docker container restart findface-multi-findface-video-worker-1
+
+Configure Video Recorder to work as part of the FindFace Multi web interface.
+
+Note
+
+Omit the following steps if you do not need the Video Recorder tools to appear in the FindFace Multi web interface.
+
+Do the following:
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+Find the FFSECURITY_UI_CONFIG -> vms section.
+
+The list of vms parameters to configure is the following:
+
+Parameter
+
+Description
+
+vms -> "enabled"
+
+Set True to add the Record video checkbox to camera settings.
+
+vms -> "video_player"
+
+Set True to enable the video player camera settings to open in event notifications and
+camera preview (instead of static frames). This setting requires "enabled": True.
+
+Find the FFSECURITY_UI_CONFIG -> video_player section.
+
+The list of video player parameters to configure is the following:
+
+Parameter
+
+Description
+
+"overlay" -> "objects"
+
+Defines the settings for displaying bbox and attribute data to the objects "faces", "bodies", "cars".
+Set True or False to enable/disable bbox and attribute data display for the relevant objects.
+
+"overlay" -> "gdpr"
+
+Set True to blurring all unmatched objects displayed on the video player.
+To fully comply with the personal data protection laws, follow this guide.
+
+"timeline" -> "min_zoom"
+
+Defines the largest possible scale on the video player timeline, seconds per pixel.
+
+"timeline" -> "max_zoom"
+
+Defines the smallest possible scale on the timeline, seconds per pixel.
+
+"timeline" -> "objects" -> "events"
+"faces" -> "enabled"
+
+Set True to enable marking face events on the timeline.
+
+"timeline" -> "objects" -> "events"
+"faces" -> "limit"
+
+The maximum number of face events simultaneously marked on the timeline. If there is more face events than
+that, you will be asked to zoom in.
+
+"timeline" -> "objects" -> "events"
+"faces" -> "matchedColor"
+
+Color of the matched face events.
+
+"timeline" -> "objects" -> "events"
+"faces" -> "unmatchedColor"
+
+Color of the unmatched face events.
+
+"timeline" -> "objects" -> "events"
+"bodies" -> "enabled"
+
+Set True to enable marking bodies events on the timeline.
+
+"timeline" -> "objects" -> "events"
+"bodies" -> "limit"
+
+The maximum number of body events simultaneously marked on the timeline. If there is more body events than
+that, you will be asked to zoom in.
+
+"timeline" -> "objects" -> "events"
+"bodies" -> "matchedColor"
+
+Color of the matched body events.
+
+"timeline" -> "objects" -> "events"
+"bodies" -> "unmatchedColor"
+
+Color of the unmatched body events.
+
+"timeline" -> "objects" -> "events"
+"cars" -> "enabled"
+
+Set True to enable marking vehicle events on the timeline.
+
+"timeline" -> "objects" -> "events"
+"cars" -> "limit"
+
+The maximum number of vehicle events simultaneously marked on the timeline.
+If there is more vehicle events than that, you will be asked to zoom in.
+
+"timeline" -> "objects" -> "events"
+"cars" -> "matchedColor"
+
+Color of the matched vehicle events.
+
+"timeline" -> "objects" -> "events"
+"cars" -> "unmatchedColor"
+
+Color of the unmatched vehicle events.
+
+"timeline" -> "objects" -> "episodes"
+"humans" -> "enabled"
+
+Set True to enable marking human episodes on the timeline.
+
+"timeline" -> "objects" -> "episodes"
+"humans" -> "limit"
+
+The maximum number of humans episodes simultaneously marked on the timeline. If there is more face episodes than
+that, you will be asked to zoom in.
+
+"timeline" -> "objects" -> "episodes"
+"humans" -> "matchedColor"
+
+Color of the matched human episodes.
+
+"timeline" -> "objects" -> "episodes"
+"humans" -> "unmatchedColor"
+
+Color of the unmatched human episodes.
+
+"timeline" -> "objects" -> "episodes"
+"cars" -> "enabled"
+
+Set True to enable marking vehicle episodes on the timeline.
+
+"timeline" -> "objects" -> "episodes"
+"cars" -> "limit"
+
+The maximum number of vehicle episodes simultaneously marked on the timeline.
+If there is more vehicle episodes than that, you will be asked to zoom in.
+
+"timeline" -> "objects" -> "episodes"
+"cars" -> "matchedColor"
+
+Color of the matched vehicle episodes.
+
+"timeline" -> "objects" -> "episodes"
+"cars" -> "unmatchedColor"
+
+Color of the unmatched vehicle episodes.
+
+FFSECURITY_UI_CONFIG = {
+
+"video_player": {
+ "overlay": {
+     "objects": {
+         "faces": {
+           "bbox": True,
+           "info": True
+         },
+         "bodies": {
+           "bbox": True,
+           "info": True
+         },
+         "cars": {
+           "bbox": True,
+           "info": True
+         }
+     },
+     "gdpr": False
+ },
+ "timeline": {
+     "min_zoom": 0.2,
+     "max_zoom": 200,
+     "objects": {
+         "events": {
+             "faces": {
+                 "enabled": True,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+             "bodies": {
+                 "enabled": False,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+             "cars": {
+                 "enabled": False,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+         },
+         "episodes": {
+             "humans": {
+                 "enabled": False,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+             "cars": {
+                 "enabled": False,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+         },
+     },
+ },
+},
+"vms": {
+   "enabled": True,
+   "video_player": True,
+},
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+## Nuances of Disabling Video Recorder
+
+If Video Recorder is running and recording video on selected cameras, and you need to disable it, be sure to disable video recording on the cameras first, before proceeding with the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py and /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration files.
+
+          

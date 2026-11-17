@@ -1,0 +1,297 @@
+
+
+# Camera groups
+
+Camera Group is a collection of Cameras, set up in same location or used for similar purposes.
+
+## List camera groups
+
+To list camera groups, use the following method:
+
+GET /camera-groups/
+
+The REQUEST contains the following QUERY-STRING PARAMETERS:
+
+Name
+
+Schema
+
+Description
+
+limit
+
+integer
+
+Number of results to return.
+
+ordering
+
+string
+
+Available fields: id, created_date, modified_date.
+
+To look for camera groups id specify some value of limit and ordering.
+
+CURL example
+
+curl -X GET "http://<findface-ip:port>/camera-groups/?limit=3&ordering=id" \
+  -H "Accept: application/json" \
+  -H "Content-Language: ru" \
+  -H "Accept-Language: ru" \
+  -H "Authorization: Token <token>" \
+
+If the response is successful (OK: 200), it returns an object that contains array of results with the following parameters. Example.
+
+Tip
+
+* – means required parameters. 🆁 – read only.
+
+Name
+
+Schema
+
+Description
+
+id*
+
+integer 🆁
+
+ID of the camera group.
+
+created_date*
+
+date-time 🆁
+
+Object creation date.
+
+modified_date*
+
+date-time 🆁
+
+Object modification date.
+
+active
+
+boolean
+
+Process events from this camera group.
+
+name*
+
+string
+
+Short group name, up to 256 characters.
+
+comment
+
+string
+
+Extended description of the user, up to 2048 chars.
+
+deduplicate
+
+boolean
+
+True if events from this camera group are to be deduplicated.
+
+deduplicateDelay
+
+integer
+
+Event deduplication timeout. Constraints: Min 0 ┃ Max 10000. Default value is 15.
+
+labels
+
+<any-key>: string
+
+Labels used to allocate a certain findface-video-worker instance to process video streams from this camera group.
+
+permissions
+
+<any-key>: string
+
+Permissions on this camera group.
+
+face_threshold
+
+number┃null
+
+Camera group face confidence threshold. Constraints: Min 0┃Max 1.
+
+body_threshold
+
+number┃null
+
+Camera group body confidence threshold. Constraints: Min 0┃Max 1.
+
+car_threshold
+
+number┃null
+
+Camera group car confidence threshold. Constraints: Min 0┃Max 1.
+
+Response example
+
+{
+ "results": [
+   {
+     "id": -1,
+     "created_date": "2023-01-16T13:44:36.531501Z",
+     "modified_date": "2023-01-16T13:44:36.531519Z",
+     "active": true,
+     "name": "Video archive default Camera Group",
+     "comment": "",
+     "deduplicate": false,
+     "deduplicateDelay": 15,
+     "labels": {},
+     "permissions": {
+       "1": "edit",
+       "2": "view",
+       "3": "view"
+     },
+     "face_threshold": null,
+     "body_threshold": null,
+     "car_threshold": null
+   }
+ ]
+}
+
+## Create Camera Group
+
+To add a new camera group, use the following method:
+
+POST /camera-groups/
+
+The REQUEST BODY is required and contains application/json object with the following parameters. Example.
+
+Name
+
+Schema
+
+Description
+
+active
+
+boolean
+
+Process events from this camera group.
+
+name*
+
+string
+
+Short group name, up to 256 characters.
+
+comment
+
+string
+
+Extended description of the user, up to 2048 chars.
+
+deduplicate
+
+boolean
+
+True if events from this camera group are to be deduplicated.
+
+deduplicateDelay
+
+integer
+
+Event deduplication timeout. Constraints: Min 0┃Max 10000. Default value is 15.
+
+labels
+
+<any-key>: string
+
+Labels used to allocate a certain findface-video-worker instance to process video streams from this camera group.
+
+permissions
+
+<any-key>: string
+
+Permissions on this camera group.
+
+face_threshold
+
+number┃null
+
+Camera group face confidence threshold. Constraints: Min 0┃Max 1.
+
+body_threshold
+
+number┃null
+
+Camera group body confidence threshold. Constraints: Min 0┃Max 1.
+
+car_threshold
+
+number┃null
+
+Camera group car confidence threshold. Constraints: Min 0┃Max 1.
+
+CURL example
+
+curl -X POST "http://<findface-ip:port>/camera-groups/" \
+ -H "Accept: application/json" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Token <token>" \
+ -H "Content-Type: application/json" \
+ -d '{"active":false,"name":"Test_camera_group","comment":"AAAAAA","deduplicate":false,"deduplicateDelay":0,"labels":{},"permissions":{},"face_threshold":0,"body_threshold":0,"car_threshold":0}' \
+
+Request example
+
+Tip
+
+This example is given for reference only, substitute your values in the corresponding fields. You may fill in only the required fields, and the others will be by default.
+
+You may send these parameters:
+
+{
+ "active": false,
+ "name": "Test_camera_group",
+ "comment": "AAAAAA",
+ "deduplicate": false,
+ "deduplicateDelay": 0,
+ "labels": {},
+ "permissions": {},
+ "face_threshold": 0,
+ "body_threshold": 0,
+ "car_threshold": 0
+}
+
+If the response is successful (Created: 201), it returns an object that contains parameters. Example.
+
+Response example
+
+{
+ "id": 2,
+ "created_date": "2023-01-23T12:14:09.885006Z",
+ "modified_date": "2023-01-23T12:14:09.885030Z",
+ "active": false,
+ "name": "Test_camera_group",
+ "comment": "AAAAAA",
+ "deduplicate": false,
+ "deduplicateDelay": 0,
+ "labels": {},
+ "permissions": {
+   "1": "edit"
+ },
+ "face_threshold": 0,
+ "body_threshold": 0,
+ "car_threshold": 0
+}
+
+Use camera group id to make a POST request for creating a new camera.
+
+## Useful requests
+
+GET /camera-groups/
+POST /camera-groups/
+GET /camera-groups/{id}/
+DELETE /camera-groups/{id}/
+PATCH /camera-groups/{id}/
+GET /camera-groups/count/
+
+          

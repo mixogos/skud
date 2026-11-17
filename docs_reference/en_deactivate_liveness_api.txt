@@ -1,0 +1,39 @@
+
+
+# Deactivate findface-liveness-api installed with FindFace Multi
+
+If you don’t utilize the findface-liveness-api service installed with FindFace Multi and the face-based authentication does not apply to your system, we recommend deactivating findface-liveness-api.
+
+Do the following:
+
+Stop the findface-multi-findface-liveness-api-1 container and disable its autostart by executing:
+
+sudo docker container stop findface-multi-findface-liveness-api-1
+sudo docker update --restart=no findface-multi-findface-liveness-api-1
+
+Open the /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml
+
+Disable the neural network models used by the findface-liveness-api service. To do so, pass the empty value '' to the multicrop_full_crop2x and face_liveness parameters.
+
+normalizers:
+  models:
+    ...
+    multicrop_full_crop2x:
+      model: ''
+    ...
+
+extractors:
+  models:
+    ...
+    face_liveness:
+      default:
+        model: ''
+    ...
+
+Restart the findface-multi-findface-extraction-api-1 container.
+
+sudo docker container restart findface-multi-findface-extraction-api-1
+
+          

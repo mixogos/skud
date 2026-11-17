@@ -1,0 +1,250 @@
+
+
+# FindFace Video Worker Deployment on Remote Hosts
+
+You can install findface-video-worker instances apart from the FindFace Multi principal server when creating a multi-host environment.
+
+Important
+
+Before deploying findface-video-worker instances on remote hosts, do the following:
+
+Allow accessing the findface-ntls license server from any IP address. To do so, open the /opt/findface-multi/configs/findface-ntls/findface-ntls.yaml configuration file on the server with findface-ntls and set listen: 0.0.0.0:3133. Restart the findface-multi-findface-ntls-1 container.
+
+sudo vi /opt/findface-multi/configs/findface-ntls/findface-ntls.yaml
+
+listen: 0.0.0.0:3133
+
+sudo docker container restart findface-multi-findface-ntls-1
+
+Allow accessing the findface-video-manager service from any IP address. To do so, open the /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml configuration file on the server with findface-video-manager and set listen: 0.0.0.0:18810 and rpc:listen: 0.0.0.0:18811. Restart the findface-multi-findface-video-manager-1 container.
+
+sudo vi /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml
+
+listen: 0.0.0.0:18810
+...
+rpc:
+  listen: 0.0.0.0:18811
+
+sudo docker container restart findface-multi-findface-video-manager-1
+
+On the FindFace Multi server, open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file and make sure that the ROUTER_URL parameter contains the external IP address of the FindFace Multi server and not the localhost. The findface-video-worker instances on the remote hosts will be using this address for posting objects.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+...
+
+'ROUTER_URL': 'http://192.168.0.12',
+
+...
+
+To install only a findface-video-worker service, do the following:
+
+Tip
+
+Before deployment, be sure to meet the system requirements and prepare the server first.
+
+Download the installer file findface-*.run.
+
+Put the .run file into some directory on the designated host (for example, /home/username).
+
+From this directory, make the .run file executable.
+
+Note
+
+Be sure to specify the actual file name instead of findface-*.
+
+chmod +x findface-*.run
+
+Execute the .run file.
+
+sudo ./findface-*.run
+
+The installer will ask you a few questions and perform several automated checks to ensure that the host meets the system requirements. After filling out each prompt, press Enter. The questions and answers are the following:
+
+Q: Which product should be installed?
+
+A: 3
+
+1. [multi   ]  FindFace Multi
+2. [server  ]  FindFace Server
+3. [video-worker]  FindFace Video Worker
+
+(default: multi)
+product> 3
+
+Q: Which variant of Video Worker should be installed?
+
+A: Specify the findface-video-worker package type, CPU or GPU.
+
+Which variant of Video Worker should be installed?
+
+-  1 [cpu]  CPU-based implementation, slower but doesn't require GPU
+-  2 [gpu]  CUDA-based implementation of video detector, requires NVIDIA GPU
+
+Q: Found X interface(s). Which one should we announce as our inter-service communication address?
+
+A: Choose the default interface 2 to connect to the FindFace Multi server. We don’t recommend you to use localhost.
+
+Found 3 interface(s). Which one should we announce as our inter-service communication address?
+
+-  1 [lo      ]  127.0.0.1
+-  2 [ens3    ]  192.168.112.254
+-  3 [docker0 ]  10.152.249.1
+
+(default: 192.168.112.254)
+inter_ip.advertised> 2
+
+Q: Please enter FF.Multi or FF.Server IP address:
+
+A: Specify the FindFace Multi server IP address.
+
+Please enter FF.Multi or FF.Server IP address:
+server_addr> 192.168.112.25
+
+After that, the installation process will automatically begin.
+
+Perform post-installation procedures.
+
+Configure the findface-video-worker.yaml file and fill out the values for all required parameters. Make sure that detectors, normalizers, and extractors are specified in the models section and objects section has corresponding values. Below is an example of how the section should look like. It may vary depending on the recognition objects that you have selected.
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+models:
+  cache_dir: /var/cache/findface/models_cache
+  detectors:
+    car:
+      fnk_path: /usr/share/findface-data/models/detector/car.gustav_normal.007.cpu.fnk
+      min_size: 60
+    body:
+      fnk_path: /usr/share/findface-data/models/detector/bodydet.gustav_normal.021.cpu.fnk
+      min_size: 60
+    face:
+      fnk_path: /usr/share/findface-data/models/detector/facedet.jasmine_fast.004.cpu.fnk
+      min_size: 60
+  normalizers:
+    car_norm:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.cpu.fnk
+    car_norm_quality:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.cpu.fnk
+    body_norm:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.cpu.fnk
+    body_norm_quality:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.cpu.fnk
+    face_norm:
+      fnk_path: /usr/share/findface-data/models/facenorm/crop2x.v2_maxsize400.cpu.fnk
+    face_norm_quality:
+      fnk_path: /usr/share/findface-data/models/facenorm/crop1x.v2_maxsize400.cpu.fnk
+  extractors:
+    car_quality:
+      fnk_path: /usr/share/findface-data/models/carattr/carattr.quality.v1.cpu.fnk
+      normalizer: car_norm_quality
+    body_quality:
+      fnk_path: /usr/share/findface-data/models/pedattr/pedattr.quality.v0.cpu.fnk
+      normalizer: body_norm_quality
+    face_quality:
+      fnk_path: /usr/share/findface-data/models/faceattr/faceattr.quality.v5.cpu.fnk
+      normalizer: face_norm_quality
+  objects:
+    car:
+      normalizer: car_norm
+      quality: car_quality
+      track_features: ''
+    body:
+      normalizer: body_norm
+      quality: body_quality
+      track_features: ''
+    face:
+      normalizer: face_norm
+      quality: face_quality
+      track_features: ''
+
+Restart the findface-multi-findface-video-worker-1 container.
+
+sudo docker container restart findface-multi-findface-video-worker-1
+
+Important
+
+If you chose to install findface-ntls and/or findface-video-manager on different hosts than that with findface-multi-legacy, specify their IP addresses in the /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration file after the installation.
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+In the ntls_addr parameter, specify the findface-ntls host IP address.
+
+ntls_addr: 127.0.0.1:3133
+
+In the mgr → static parameter, specify the findface-video-manager host IP address, which provides findface-video-worker with settings and the video stream list.
+
+mgr:
+  static: 127.0.0.1:18811
+
+Tip
+
+To install a findface-video-worker instance on a different host, use the automatic deployment from the installation file. In this case, you won’t have to answer the installation questions again. The exact path to the installation file is displayed right after the last question before the installer starts active progress:
+
+[I 2023-02-09 11:13:37,187 main:142] Your answers were saved to /tmp/findface-installer-p01n9sn3.json
+
+To launch the automatic deployment from the /tmp/<findface-installer-*>.json file, execute:
+
+sudo ./<findface-*>.run -f /tmp/<findface-installer-*>.json
+
+If your findface-video-worker instance is deployed in a multi-GPU environment, you will have to manually configure the /opt/findface-multi/docker-compose.yaml file.
+
+In the /opt/findface-multi/docker-compose.yaml file in the services section, specify the findface-video-worker configuration for each running findface-video-worker instance. In the environment parameter, specify the correct GPU ID for CUDA_VISIBLE_DEVICES. Stick to the example below:
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+
+services:
+  ...
+  findface-video-worker:
+    command: [--config=/etc/findface-video-worker.yaml]
+    environment: [CUDA_VISIBLE_DEVICES=0]
+    image: docker.int.ntl/ntech/universe/video-worker-gpu:ffserver-12.240830.2
+    logging: {driver: journald}
+    network_mode: host
+    restart: always
+    runtime: nvidia
+    volumes: ['./configs/findface-video-worker/findface-video-worker.yaml:/etc/findface-video-worker.yaml:ro',
+      './models:/usr/share/findface-data/models:ro', './cache/findface-video-worker/models:/var/cache/findface/models_cache',
+      './cache/findface-video-worker/recorder:/var/cache/findface/video-worker-recorder']
+  findface-video-worker-1:
+    command: [--config=/etc/findface-video-worker-1.yaml]
+    environment: [CUDA_VISIBLE_DEVICES=1]
+    image: docker.int.ntl/ntech/universe/video-worker-gpu:ffserver-12.240830.2
+    logging: {driver: journald}
+    network_mode: host
+    restart: always
+    runtime: nvidia
+    volumes: ['./configs/findface-video-worker/findface-video-worker-1.yaml:/etc/findface-video-worker-1.yaml:ro',
+      './models:/usr/share/findface-data/models:ro', './cache/findface-video-worker/models:/var/cache/findface/models_cache',
+      './cache/findface-video-worker/recorder:/var/cache/findface/video-worker-recorder']
+
+In the same section, specify the environment variables for each findface-video-worker instance. Stick to the example below:
+
+findface-video-worker:
+  image: docker.int.ntl/ntech/universe/video-worker-gpu:ffserver-12.240830.2
+  ...
+  environment:
+    - CFG_MGR_STATIC=vm:18811
+    - CFG_NTLS_ADDR=ntls:3133
+    - CFG_STREAMER_PORT=9999
+    - CFG_STREAMER_URL=127.0.0.1:9999
+    - CFG_STREAMER_TRACKS=true
+    #- CFG_RESOLUTIONS=1920x1080
+
+Important
+
+For the correct operation, multiple findface-video-worker instances should not refer to the same CFG_STREAMER_PORT. Make sure that you have specified a unique CFG_STREAMER_PORT for each findface-video-worker instance.
+
+Important
+
+Specify the CFG_STREAMER_URL parameter with the IP address of the server on which the findface-video-worker is deployed. This parameter is responsible for the operation of the Video Wall.
+
+From the /opt/findface-multi directory rebuild all FindFace Multi containers.
+
+cd /opt/findface-multi
+
+sudo docker-compose down
+
+sudo docker-compose up -d
+
+          

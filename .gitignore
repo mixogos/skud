@@ -1,0 +1,22 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+
+# Сборка приложения
+dist/
+build/
+*.spec.bak
+
+# Веб-интерфейс
+frontend/node_modules/
+frontend/dist/
+
+# Данные и модели (не хранятся в git; модели качаются через `python -m app.cli download-models`)
+backend/data/
+backend/data-demo/
+
+# Прочее
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,444 @@
+
+
+# Record
+
+## Create a new record
+
+To create a new human record, use the following method:
+
+POST /cards/humans/
+
+Tip
+
+For vehicle records instead humans use cars.
+
+The REQUEST BODY is required and contains application/json object with the following parameters.
+
+Tip
+
+* – means required parameters. 🆁 – read only.
+
+Name
+
+Schema
+
+Description
+
+active
+
+boolean
+
+true if the object is enabled.
+
+name*
+
+string
+
+Record name, up to 256 characters.
+
+comment
+
+string
+
+Extended description, up to 2048 characters.
+
+watch_lists*
+
+[integer]
+
+Array of the related Watch lists ID.
+
+meta
+
+<any-key>
+
+Meta data.
+
+active_after
+
+date-time┃null
+
+Date-time information.
+
+active_before
+
+date-time┃null
+
+Date-time information.
+
+disable_schedule
+
+{…}
+
+Serializer mixin that raises ValidationError if excess fields are presented. Can be used in nested serializers.
+
+Request example
+
+Tip
+
+This example is given for reference only, substitute your values in the corresponding fields. You may fill in only the required fields, and the others will be by default.
+
+{
+ "active": false,
+ "name": "A",
+ "comment": "AAAAAA",
+ "watch_lists": [
+   0
+ ],
+ "meta": {},
+ "active_after": "1970-01-01T00:00:00.000Z",
+ "active_before": "1970-01-01T00:00:00.000Z",
+ "disable_schedule": {
+   "monday": [
+     [
+       "A"
+     ]
+   ],
+   "tuesday": [
+     [
+       "A"
+     ]
+   ],
+   "wednesday": [
+     [
+       "A"
+     ]
+   ],
+   "thursday": [
+     [
+       "A"
+     ]
+   ],
+   "friday": [
+     [
+       "A"
+     ]
+   ],
+   "saturday": [
+     [
+       "A"
+     ]
+   ],
+   "sunday": [
+     [
+       "A"
+     ]
+   ]
+ }
+}
+
+For example, you may send these parameters:
+
+{
+ "active": true,
+ "name": "Angelina Jolie",
+ "comment": "Миссис Смит",
+ "watch_lists": [
+   2
+ ]
+}
+
+CURL example
+
+curl -X POST "http://<findface-ip:port>/cards/humans/" \
+ -H "Accept: application/json" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Token <token>" \
+ -H "Content-Type: application/json" \
+ -d '{"active":true,"name":"Angelina Jolie","comment":"Миссис Смит","watch_lists":[2]}' \
+
+If the response is successful (Created:201), it returns an object that contains the following parameters. Example.
+
+Name
+
+Schema
+
+Description
+
+id*
+
+integer 🆁
+
+Record ID.
+
+active
+
+boolean
+
+true if the object is enabled.
+
+filled*
+
+boolean 🆁
+
+true if record is filled.
+
+created_date*
+
+date-time 🆁
+
+Object creation date.
+
+modified_date*
+
+date-time 🆁
+
+Object modification date.
+
+name*
+
+string
+
+Record name, up to 256 characters.
+
+comment
+
+string
+
+Extended description, up to 2048 characters.
+
+watch_lists*
+
+[integer]
+
+Array of the related Watch lists ID.
+
+looks_like*
+
+confidence*
+
+collection*
+
+matched_object*
+
+number
+
+string┃null
+
+string┃null
+
+Confidence. Constraints: Min 0┃Max 1.
+
+Collection.
+
+Matched object.
+
+meta
+
+<any-key>
+
+Meta data.
+
+looks_like_confidence*
+
+number 🆁
+
+Looks like confidence.
+
+active_after
+
+date-time┃null
+
+Data-time information.
+
+active_before
+
+date-time┃null
+
+Data-time information.
+
+disable_schedule
+
+array
+
+Serializer mixin that raises ValidationError if excess fields are presented. Can be used in nested serializers.
+
+recount_schedule_on*
+
+date-time 🆁
+
+Data-time information.
+
+face_objects*
+
+integer 🆁
+
+Linked face objects counter.
+
+body_objects*
+
+integer 🆁
+
+Linked body objects counter.
+
+face_cluster*
+
+integer 🆁
+
+Face claster.
+
+body_cluster*
+
+integer 🆁
+
+Body cluster.
+
+links_to_relations*
+
+id*
+
+name*
+
+created_date*
+
+card*
+
+relation*
+
+integer 🆁
+
+string
+
+date-time 🆁
+
+integer
+
+integer
+
+ID
+
+Short name, up to 256 characters.
+
+RelationLink creation date.
+
+Record.
+
+Relation.
+
+Note
+
+Relations are not supported in FindFace Multi 2.0+ and are kept in API only.
+
+Response example
+
+{
+ "id": 1,
+ "active": true,
+ "filled": true,
+ "created_date": "2023-01-17T07:43:56.363330Z",
+ "modified_date": "2023-01-17T07:43:56.363354Z",
+ "name": "Angelina Jolie",
+ "comment": "Миссис Смит",
+ "watch_lists": [
+   2
+ ],
+ "meta": {},
+ "active_after": null,
+ "active_before": null,
+ "disable_schedule": {},
+ "recount_schedule_on": null,
+ "face_objects": 0,
+ "body_objects": 0,
+ "face_cluster": null,
+ "body_cluster": null,
+ "links_to_relations": []
+}
+
+## List records
+
+To list human records, use this method:
+
+GET /cards/humans/
+
+The REQUEST contains the QUERY-STRING PARAMETERS. All parameters you can see in http://<findface-ip:port>/api-docs.
+
+You may use this method to search faces in the system. Specify the value of detection:<detection id>, received by detection of objects on a photo, in the field looks_like.
+
+CURL example
+
+curl -X GET "http://<findface-ip:port>/cards/humans/?looks_like=detection%3Acf4ffvmv54rotim9jt60" \
+ -H "Accept: application/json" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Token <token>" \
+
+If the response is successful (OK: 200), it returns an object that contains the following parameters:
+
+Name
+
+Schema
+
+Description
+
+next_page
+
+string┃null
+
+Next page.
+
+prev_page
+
+string┃null
+
+Previous page.
+
+results
+
+[{…}]
+
+Contain the following parameters.
+
+Response example
+
+ {
+ "next_page": null,
+ "prev_page": null,
+ "results": [
+   {
+     "id": 1,
+     "active": true,
+     "filled": true,
+     "created_date": "2023-01-17T07:43:56.363330Z",
+     "modified_date": "2023-01-17T11:56:42.496871Z",
+     "name": "Angelina Jolie",
+     "comment": "Миссис Смит",
+     "watch_lists": [
+       2
+     ],
+     "looks_like": {
+       "confidence": 0.8078,
+       "collection": "face_objects",
+       "matched_object": "4493493039043981648"
+     },
+     "meta": {},
+     "looks_like_confidence": 0.8078,
+     "active_after": null,
+     "active_before": null,
+     "disable_schedule": {},
+     "recount_schedule_on": null,
+     "face_objects": 1,
+     "body_objects": 0,
+     "face_cluster": 11,
+     "body_cluster": null,
+     "links_to_relations": []
+   }
+ ]
+}
+
+## Useful requests
+
+GET /cards/cars/
+POST /cards/cars/
+GET /cards/cars/{id}/
+DELETE /cards/cars/{id}/
+PATCH /cards/cars/{id}/
+GET /cards/cars/count/
+GET /cards/humans/
+POST /cards/humans/
+GET /cards/humans/{id}/
+DELETE /cards/humans/{id}/
+PATCH /cards/humans/{id}/
+GET /cards/humans/count/
+
+          

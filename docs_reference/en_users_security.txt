@@ -1,0 +1,51 @@
+
+
+# User Management and System Security
+
+Important
+
+Although FindFace Multi provides tools to ensure its protection from unauthorized access, they are not replacing a properly configured firewall. Be sure to use a firewall to heighten the FindFace Multi network protection.
+
+Contents
+
+Role and User Management
+
+Predefined Roles
+
+Create Custom Role in UI
+
+Primary and Additional User Privileges
+
+Create User Account Manually
+
+Create Default User with Administrator Rights
+
+Integrate with Active Directory for Auto User Creation
+
+Deactivate or Delete Users
+
+Authentication and Session Monitoring
+
+Authentication Types
+
+Configure Authentication and Session Renewal
+
+Log out All Users
+
+Enable Data Encryption
+
+Enable Record Index Protection
+
+Disable ACL
+
+List of User Sessions. Blocklist
+
+Grant Permissions to Work with Sessions
+
+View User Sessions
+
+Block Device
+
+Allowed File Extensions in Records
+
+          

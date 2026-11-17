@@ -1,0 +1,534 @@
+
+
+# Автоматическое односерверное развертывание FindFace Multi
+
+Для автоматического односерверного развертывания FindFace Multi следуйте приведенным ниже инструкциям. Будучи самым простым, данный тип установки отлично подходит для начала работы с FindFace Multi. Перед процедурой обязательно учтите системные требования и подготовьте сервер Ubuntu или Debian.
+
+Выполните следующие действия:
+
+Загрузите файл инсталлятора findface-*.run.
+
+Поместите файл .run в любой каталог на сервере установки (например, /home/username).
+
+Из данного каталога сделайте файл .run исполняемым.
+
+Примечание
+
+Вместо findface-* укажите актуальное имя файла.
+
+chmod +x findface-*.run
+
+Запустите файл .run.
+
+sudo ./findface-*.run
+
+Инсталлятор задаст вам несколько вопросов, после чего проверит, соответствует ли сервер системным требованиям. Ответьте на вопросы надлежащим образом, после ответа каждый раз нажимая Enter. Вопросы и ответы следующие:
+
+В: Which product should be installed? (Какой продукт следует установить?)
+
+О: 1
+
+1. [multi   ]  FindFace Multi
+2. [server  ]  FindFace Server
+3. [video-worker]  FindFace Video Worker
+
+(default: multi)
+product> 1
+
+В: Please choose installation type: (Пожалуйста, выберите тип установки:)
+
+О: 1
+
+-  1 [stand-alone ]  Single Server
+-  2 [multi-worker]  Single Server, Multiple video workers
+-  3 [images      ]  Don't install anything, just load the images
+-  4 [custom      ]  Fully customized installation
+
+(default: stand-alone)
+type> 1
+
+В: Directory to install into: (Директория установки:)
+
+О: Укажите директорию установки FindFace Multi. По умолчанию установка выполняется в /opt/findface-multi. Нажмите Enter для подтверждения. В противном случае укажите нужную директорию и нажмите Enter.
+
+Directory to install into:
+(default: /opt/findface-multi)
+dest_dir>
+
+В: Do you want to install Video Recorder?(y/n) (Хотите ли вы установить Видеомагнитофон?)
+
+О: y или n, в зависимости от ваших нужд.
+
+Do you want to install Video Recorder?(y/n)
+install_video_recorder> n
+
+В: Found X interface(s). Which one should we announce as our external address? (Было найдено X сетевых интерфейсов. Какой интерфейс следует использовать в качестве внешнего IP-адреса?)
+
+О: Выберите интерфейс, который вы собираетесь использовать в качестве IP-адреса FindFace.
+
+Found 3 interface(s). Which one should we announce as our external address?
+
+-  1 [lo      ]  127.0.0.1
+-  2 [ens3    ]  192.168.112.254
+-  3 [docker0 ]  10.44.132.1
+
+(default: 192.168.112.254)
+ext_ip.advertised> 2
+
+В: Which variant of Video Worker should be installed? (Какой вариант Video Worker следует установить?)
+
+О: Укажите вариант findface-video-worker, CPU или GPU.
+
+Which variant of Video Worker should be installed?
+
+-  1 [cpu]  CPU-based implementation, slower but doesn't require GPU
+-  2 [gpu]  CUDA-based implementation of video detector, requires NVIDIA GPU
+
+(default: cpu)
+findface-video-worker.variant> 1
+
+В: Which variant of Extraction API should be installed? (Какой вариант Extraction API следует установить?)
+
+О: Укажите вариант findface-extraction-api, CPU или GPU.
+
+Which variant of Extraction API should be installed?
+
+-  1 [cpu]  CPU-only implementation, slower but doesn't require GPU
+-  2 [gpu]  CUDA-based implementation, faster, requires NVIDIA GPU (supports both CPU and GPU models)
+
+(default: cpu)
+findface-extraction-api.variant> 1
+
+В: Which variant of findface-ntls should be installed? (Какой вариант findface-ntls следует установить?)
+
+О: Укажите вариант findface-ntls. Выберите вариант 2, только если вы используете лицензию Sentinel, активированную до 2024 года. В остальных случаях выберите вариант 1.
+
+ Which variant of findface-ntls should be installed?
+
+ -  1 [default]  Default ntls variant
+ -  2 [old-sentinel]  Backward compatibility variant for Sentinel licenses activated before 2024
+
+(default: default)
+findface-ntls.variant> 1
+
+В: Do you want to configure detectors and features right now?(y/n) (Хотите ли вы настроить детекторы и распознавание атрибутов объектов сейчас?)
+
+О: Мы рекомендуем установить и настроить функциональность обнаружения объектов и распознавания атрибутов объектов на этапе установки. Ответьте y, чтобы начать процесс. Вы можете пропустить данный шаг, ответив n и выполнив необходимые действия позже, следуя инструкциям в разделах Распознавание лиц и их атрибутов, Распознавание транспортных средств и их атрибутов и Распознавание силуэтов и их атрибутов .
+
+Do you want to configure detectors and features right now?(y/n)
+configure> y
+
+В: Please select detectors to install: (Пожалуйста, выберите детекторы для установки:)
+
+О: Данный вопрос появляется после запроса на установку и настройку функций обнаружения объектов и распознавания атрибутов объектов. В форме множественного выбора детектор лиц отмечен по умолчанию. Введите соответствующий номер или название объекта, чтобы выбрать невыбранный детектор. Например, чтобы добавить в конфигурацию детектор силуэтов и детектор транспортных средств, введите 2 3. Введите done, чтобы продолжить.
+
+Please select detectors to install:
+
+-  1 [v]  Face
+-  2 [ ]  Body
+-  3 [ ]  Car
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+detectors>2 3
+-  1 [v]  Face
+-  2 [v]  Body
+-  3 [v]  Car
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+detectors> done
+
+Если для выбора вы используете не номер, а название объекта, выбирайте объекты по очереди: вставьте Body, нажмите Enter, затем вставьте Car, нажмите Enter. Для продолжения введите done.
+
+В: Enable liveness and attempt to continue installation?(y/n) (Включить детектор витальности лиц liveness и продолжить установку?)
+
+О: Данный вопрос появляется после запроса на установку и настройку функций обнаружения объектов и распознавания атрибутов объектов. Чтобы установить встроенный детектор витальности лиц, введите y. В противном случае введите n.
+
+Enable liveness and attempt to continue installation?(y/n)
+enable_liveness> y
+
+В: Please select face features to install: (Пожалуйста, выберите атрибуты лиц для установки:)
+
+О: Данный вопрос появляется после запроса на установку и настройку функций обнаружения объектов и распознавания атрибутов объектов. По умолчанию установке подлежат все атрибуты лица, кроме Eyes attrs. Ответьте done для подтверждения. Если определенный атрибут не нужен, вы можете ввести -название атрибута или его порядковый номер. Например, введите 7 или -Headpose, чтобы исключить распознавание положения головы. Затем введите done.
+
+Please select face features to install:
+
+-  1 [v]  Age
+-  2 [v]  Gender
+-  3 [v]  Emotions
+-  4 [v]  Beard
+-  5 [v]  Glasses
+-  6 [v]  Medical masks
+-  7 [v]  Headpose
+-  8 [ ]  Eyes attrs
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+face_features> 7
+-  1 [v]  Age
+-  2 [v]  Gender
+-  3 [v]  Emotions
+-  4 [v]  Beard
+-  5 [v]  Glasses
+-  6 [v]  Medical masks
+-  7 [ ]  Headpose
+-  8 [ ]  Eyes attrs
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+face_features> done
+
+Вопросы по распознаванию атрибутов силуэтов и транспортных средств будут аналогичны, с несколькими вариантами ответов в зависимости от запрашиваемого типа детектора.
+
+В: Please set findface-multi admin password (Пожалуйста, установите пароль для администратора FindFace Multi)
+
+О: Задайте пароль для Супер Администратора (superuser).
+
+Please set findface-multi admin password
+findface-multi-admin-password> admin
+
+В: Do you want to install Analytics service?(y/n) (Хотите ли вы установить сервис аналитики?)
+
+О: Ответив y, вы установите сервис, который будет обрабатывать данные FindFace Multi для дальнейшего их использования в аналитических целях. На данный момент аналитика работает только для пересечения линий.
+
+Do you want to install Analytics service?(y/n)
+enable_analytics> y
+
+В: Do you want to install Superset BI?(y/n) (Хотите ли вы установить BI-систему Superset?)
+
+О: Установка внешней BI-системы позволяет вам просматривать данные FindFace Multi для пересечения линий в этой системе в виде графиков. FindFace Multi выступает в качестве источника данных, а внешняя BI-система помогает визуализировать данные. Отвечая y на этот вопрос, вы выбираете установку программного приложения с открытым исходным кодом Apache Superset. Для входа в систему используйте учетные данные по умолчанию admin | admin. Позже пароль можно изменить в веб-интерфейсе системы. Если вы предпочитаете собственную BI-систему, вы можете пропустить предложенную установку и ответить n.
+
+Do you want to install Superset BI?(y/n)
+install_superset> y
+
+После ответа на последний вопрос вы увидите путь к файлу с параметрами установки:
+
+Your answers were saved to /tmp/findface-installer-t8qk_isw.json
+
+Инсталлятор извлечет образы FindFace Multi из реестра Ntechlab и запустит следующие сервисы в контейнерах Docker:
+
+Сервис
+
+Контейнер
+
+Конфигурация
+
+pause
+
+findface-multi-pause-1
+
+Запущен Started
+
+nats-jetstream
+
+findface-multi-nats-jetstream-1
+
+Запущен Started
+
+mongodb
+
+findface-multi-mongodb-1
+
+Устанавливается вместе с Видеомагнитофоном. Запущен Started
+
+findface-ntls
+
+findface-multi-findface-ntls-1
+
+Запущен Started
+
+nats
+
+findface-multi-nats-1
+
+Запущен Started
+
+postgresql
+
+findface-multi-postgresql-1
+
+Проверка работоспособности Healthy
+
+memcached
+
+findface-multi-memcached-1
+
+Запущен Started
+
+findface-upload
+
+findface-multi-findface-upload-1
+
+Запущен Started
+
+etcd
+
+findface-multi-etcd-1
+
+Запущен Started
+
+findface-sf-api
+
+findface-multi-findface-sf-api-1
+
+Запущен Started
+
+findface-extraction-api
+
+findface-multi-findface-extraction-api-1
+
+Запущен Started (CPU/GPU-ускорение).
+
+findface-tarantool-server-shard-*
+
+findface-multi-findface-tarantool-server-shard-*-1
+
+Запущен Started. Количество экземпляров (шардов) рассчитывается по формуле: N = min(max(min(mem_mb // 2000, cpu_cores), 1), 16 * cpu_cores). Т. е. количество равно размеру оперативной памяти в Мб, разделенному на 2000, или количеству физических ядер процессора (но не менее 1 шарда), или же количеству физических ядер процессора, умноженному на 16, если первое полученное значение больше.
+
+findface-video-manager
+
+findface-multi-findface-video-manager-1
+
+Запущен Started
+
+findface-deduplicator
+
+findface-multi-findface-deduplicator-1
+
+Запущен Started
+
+findface-video-streamer
+
+findface-multi-findface-video-streamer-1
+
+Устанавливается вместе с Видеомагнитофоном. Запущен Started
+
+findface-video-storage
+
+findface-multi-findface-video-storage-1
+
+Устанавливается вместе с Видеомагнитофоном. Запущен Started
+
+pgbouncer
+
+findface-multi-pgbouncer-1
+
+Запущен Started
+
+findface-liveness-api
+
+findface-multi-findface-liveness-api-1
+
+Запущен Started
+
+findface-video-worker
+
+findface-multi-findface-video-worker-1
+
+Запущен Started (CPU/GPU-ускорение).
+
+findface-onvif-discovery
+
+findface-multi-findface-onvif-discovery-1
+
+Запущен Started
+
+findface-multi-audit
+
+findface-multi-findface-multi-audit-1
+
+Запущен Started
+
+findface-multi-identity-provider
+
+findface-multi-findface-multi-identity-provider-1
+
+Проверка работоспособности Healthy
+
+findface-multi-legacy
+
+findface-multi-findface-multi-legacy-1
+
+Проверка работоспособности Healthy
+
+findface-multi-ui
+
+findface-multi-findface-multi-ui-1
+
+Запущен Started
+
+findface-multi-line-crossing-analytics
+
+findface-multi-findface-multi-line-crossing-analytics-1
+
+Запущен Started
+
+redis
+
+findface-multi-redis-1
+
+Запущен Started
+
+rabbitmq
+
+findface-multi-rabbitmq-1
+
+Проверка работоспособности Healthy
+
+timescaledb
+
+findface-multi-timescaledb-1
+
+Проверка работоспособности Healthy
+
+backend_api
+
+findface-multi-backend_api-1
+
+Запущен Started
+
+service_notifier_ws
+
+findface-multi-service_notifier_ws-1
+
+Запущен Started
+
+service_notifier_tg
+
+findface-multi-service_notifier_tg-1
+
+Запущен Started
+
+backend_provider
+
+findface-multi-backend_provider-1
+
+Запущен Started
+
+service_alarmer
+
+findface-multi-service_alarmer-1
+
+Запущен Started
+
+superset-worker
+
+findface-multi-superset-worker-1
+
+Запущен Started
+
+superset-init
+
+findface-multi-superset-init-1
+
+Запущен Started
+
+superset-worker-beat
+
+findface-multi-superset-worker-beat-1
+
+Запущен Started
+
+superset
+
+findface-multi-superset-1
+
+Запущен Started
+
+alarm-web-app
+
+findface-multi-alarm-app-1
+
+Запущен Started
+
+findface-multi-file-mover
+
+findface-multi-findface-multi-file-mover-1
+
+Запущен Started
+
+findface-multi-healthcheck
+
+findface-multi-healthcheck-1
+
+Запущен Started
+
+findface-multi-legacy-singleton-services
+
+findface-multi-findface-multi-legacy-singleton-services-1
+
+Проверка работоспособности Healthy
+
+findface-multi-identity-provider-migrate
+
+findface-multi-findface-multi-identity-provider-migrate-1
+
+Завершен Exited
+
+findface-multi-legacy-migrate
+
+findface-multi-findface-multi-legacy-migrate-1
+
+Завершен Exited
+
+findface-multi-alerts-migrate
+
+findface-multi-findface-multi-alerts-migrate-1
+
+Запущен Started
+
+findface-multi-alerts
+
+findface-multi-findface-multi-alerts-1
+
+Проверка работоспособности Healthy
+
+cleaner-vms
+
+findface-multi-cleaner-vms-1
+
+Запущен Started
+
+cleaner
+
+findface-multi-cleaner-1
+
+Запущен Started
+
+По завершении установки в консоль будет выведена информация, необходимая для использования FindFace Multi:
+
+Совет
+
+Обязательно сохраните эти данные: они вам понадобятся.
+
+#############################################################################
+#                       Installation is complete                            #
+#############################################################################
+- all configuration and data is stored in /opt/findface-multi
+- upload your license to http://192.168.0.90/#/license/
+- user interface: http://192.168.0.90/
+superuser:      admin
+documentation:  http://192.168.0.90/doc/
+- superset BI:  http://192.168.0.90:8088/
+2023/08/01 08:00:22 Installer finished
+
+Выполните процедуры после развертывания.
+
+Совет
+
+Для установки той же конфигурации FindFace Multi на другом сервере используйте автоматическое развертывание из файла с параметрами установки. В этом случае вам не придется снова отвечать на вопросы инсталлятора. Точный путь к файлу с параметрами установки отображается сразу после последнего вопроса инсталлятора, до начала активной фазы установки:
+
+[I 2023-08-01 07:56:36,323 main:142] Your answers were saved to /tmp/findface-installer-t8qk_isw.json
+
+Обязательно удалите поля *.config, exp_ip и int_ip перед установкой FindFace Multi на сервере с другим IP-адресом.
+
+Для запуска автоматического развертывания из файла /tmp/<findface-installer-*>.json, выполните следующую команду:
+
+sudo ./<findface-*>.run -f /tmp/<findface-installer-*>.json
+
+Важно
+
+Сервисы FindFace Multi логируют большой объем данных, что в конечном итоге может привести к чрезмерной загрузке диска. Чтобы этого не произошло, рекомендуется отключить сервис rsyslog из-за его неоптимальной схемы ротации логов и вместо него использовать правильно настроенный сервис systemd-journal. См. пошаговые инструкции в разделе Логирование.
+
+          

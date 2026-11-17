@@ -1,0 +1,90 @@
+
+
+# Compare Two Faces
+
+FindFace Multi allows you to compare two faces and verify that they belong to the same individual.
+
+You may compare two objects from different sources or object with an object within the same card and return the similarity between them.
+
+Do the following:
+
+Perform face (car, body) detection on the attached photo and copy id of the necessary object.
+
+Use the GET /verify method.
+
+GET /verify
+
+The REQUEST contains QUERY-STRING PARAMETERS:
+
+Name
+
+Schema
+
+Description
+
+card_id
+
+string
+
+Min 1 chars. This field accepts the id of the card that holds object to compare.
+
+*object1
+
+string
+
+Min 1 chars. This field can contain one of the following references:
+
+detection:<detection id> – use a Detection object
+
+faceevent:<event id> – use FaceEvent
+
+carevent:<event id> – use CarEvent
+
+bodyevent:<event id> – use BodyEvent
+
+faceobject:<face id> – use FaceObject
+
+carobject:<face id> – use CarObject
+
+bodyobject:<face id> – use BodyObject
+
+object2
+
+string
+
+Min 1 chars. Same as object1.
+
+CURL example
+
+curl -X GET "http://<findface-ip:port>/verify?card_id=1&object1=detection%3Acf58e4uv54rotim9jtd0&object2=detection%3Acf58g1mv54rotim9jtdg" \
+  -H "Accept: application/json" \
+  -H "Content-Language: ru" \
+  -H "Accept-Language: ru" \
+  -H "Authorization: Token <token>" \
+
+If the response is successful (OK: 200), it returns an object that contains confidence.
+
+Name
+
+Schema
+
+Description
+
+confidence*
+
+number
+
+Face similarity score. Constraints: Min 0┃Max 1.
+
+Response example
+
+{
+ "confidence": {
+   "face_objects": {
+     "4493493039043981648": 0.7896046
+   },
+   "average_conf": 0.7896046
+ }
+}
+
+          

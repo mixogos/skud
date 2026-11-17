@@ -1,0 +1,66 @@
+
+
+# Enable Personal Data Protection
+
+FindFace Multi supports laws related to the processing of personal data of individuals (GDPR and similar).
+
+To apply personal data protection to your system, do the following:
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+Disable saving unmatched events by setting 'IGNORE_UNMATCHED': True.
+
+...
+
+FFSECURITY = {
+    ...
+
+    # do not save unmatched events (GDPR support)
+    'IGNORE_UNMATCHED': True,
+
+    ...
+
+}
+
+For events with matches, enable blurring all unmatched objects in full frames. To do so, set 'BLUR_UNMATCHED_OBJECTS': True. Optionally, you can modify the default JPEG quality of those frames.
+
+...
+
+FFSECURITY = {
+    ...
+    # blur all unmatched objects on the full frame of the matched event (GDPR support)
+    'BLUR_UNMATCHED_OBJECTS': True,
+
+    # full frame jpeg quality when `BLUR_UNMATCHED_OBJECTS` is enabled
+    'BLURRED_FULLFRAME_JPEG_QUALITY': 85,
+    ...
+
+}
+
+Enable blurring all unmatched objects on the Video Wall. To do so, set "gdpr": True in the FFSECURITY_UI_CONFIG -> video_player section.
+
+FFSECURITY_UI_CONFIG = {
+    ...
+
+   "video_player": {
+      "overlay": {
+       ...
+        "gdpr": True
+      }
+   }
+    ...
+}
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+See also
+
+Video Wall
+
+          

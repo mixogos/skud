@@ -1,0 +1,484 @@
+
+
+# Enable Vehicle and Vehicle Attribute Recognition
+
+FindFace Multi allows you to recognize a single vehicle and its attributes.
+
+The vehicle attributes are as follows:
+
+license plate number (for selected countries),
+
+Note
+
+Currently, the following countries are supported:
+
+Europe: Russia, Lithuania, Latvia, Estonia, Finland, Czech Republic, Serbia, Belarus, Ukraine, Moldova, Georgia, Azerbaijan, Armenia, Türkiye.
+
+Asia: the UAE, Kazakhstan, Kyrgyzstan, Tajikistan, Turkmenistan, Uzbekistan, Saudi Arabia, Vietnam, India, Pakistan, Thailand, China, Japan, Mongolia, Singapore, South Korea, Bahrain, Qatar, Palestine.
+
+Africa: Egypt, Morocco, Tunisia.
+
+North America: Mexico.
+
+South America: Argentina, Brazil, Colombia, Peru.
+
+color,
+
+make,
+
+model,
+
+body style,
+
+vehicle category,
+
+vehicle orientation (front, rear, or side),
+
+special vehicle type (taxi, route transport, carsharing, ambulance, police, rescue service, gas service, military, road service, cash-in-transit vehicles, other special),
+
+vehicle weight and body size.
+
+Note
+
+Special vehicle recognition as well as vehicle weight and body size recognition work for selected countries only and may not work for your country. For more information please contact your manager or our support team (support@ntechlab.com).
+
+Vehicle recognition along with the attributes choice can be configured at the installation level. This section describes how to enable vehicle and vehicle attribute recognition in case this step has been skipped during installation.
+
+To enable recognition of vehicles and their attributes, do the following:
+
+Specify neural network models for vehicle recognition and vehicle attribute recognition in the /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml configuration file.
+
+Important
+
+Be sure to choose the right acceleration type for each model, matching the acceleration type of findface-extraction-api: CPU or GPU. Be aware that findface-extraction-api on CPU can work only with CPU-models, while findface-extraction-api on GPU supports both CPU- and GPU-models.
+
+Open the findface-extraction-api.yaml configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml
+
+Specify the vehicle detector model in the detectors → models section by pasting the following code:
+
+GPU
+
+detectors:
+  ...
+  models:
+    ...
+    gustav:
+      aliases:
+      - car
+      - efreitor
+      model: detector/cardet.kali_accurate.008.gpu.fnk
+      options:
+        min_object_size: 32
+        resolutions:
+        - 2048x2048
+  ...
+
+CPU
+
+detectors:
+  ...
+  models:
+    ...
+    gustav:
+      aliases:
+      - car
+      - efreitor
+      model: detector/cardet.kali_accurate.008.cpu.fnk
+      options:
+        min_object_size: 32
+        resolutions:
+        - 2048x2048
+  ...
+
+Make sure that the objects → car section contains the quality_attribute: car_quality and the base_normalizer: facenorm/cropbbox.v2.gpu.fnk or the base_normalizer: facenorm/cropbbox.v2.cpu.fnk, depending on your acceleration type:
+
+GPU
+
+objects:
+  ...
+  car:
+    base_normalizer: facenorm/cropbbox.v2.gpu.fnk
+    quality_attribute: car_quality
+  ...
+
+CPU
+
+objects:
+  ...
+  car:
+    base_normalizer: facenorm/cropbbox.v2.cpu.fnk
+    quality_attribute: car_quality
+  ...
+
+Specify the normalizers required for the extractors. If you need license plate recognition, specify the carlicplate normalizer. For other extractors, specify the cropbbox normalizer.
+
+Normalizer
+
+Normalizer model
+
+Used for extractors
+
+carlicplate
+
+carnorm/carnorm.briacon.v2.gpu.fnk
+carnorm/carnorm.briacon.v2.cpu.fnk
+
+car_license_plate
+
+cropbbox
+
+facenorm/cropbbox.v2.gpu.fnk
+facenorm/cropbbox.v2.cpu.fnk
+
+car_license_plate_quality, car_description,
+car_quality, car_special_types12, car_categories,
+car_orientation, car_weight_types7
+
+GPU
+
+normalizers:
+  ...
+
+  models:
+    ...
+    carlicplate:
+      model: carnorm/carnorm.briacon.v2.gpu.fnk
+    ...
+    cropbbox:
+      model: facenorm/cropbbox.v2.gpu.fnk
+    ...
+
+CPU
+
+normalizers:
+  ...
+
+  models:
+    ...
+    carlicplate:
+      model: carnorm/carnorm.briacon.v2.cpu.fnk
+    ...
+    cropbbox:
+      model: facenorm/cropbbox.v2.cpu.fnk
+    ...
+
+Specify the extraction models in the extractors → models section, subject to the extractors you want to enable:
+
+GPU
+
+extractors:
+  ...
+  models:
+    car_categories:
+      default:
+        model: carattr/carattr.categories.v1.gpu.fnk
+    car_color:
+      default:
+        model: ''
+    car_container_number:
+      default:
+        model: ''
+    car_description:
+      default:
+        model: carattr/carattr.description.v1.gpu.fnk
+    car_emben:
+      default:
+        model: carrec/bottas.gpu.fnk
+    car_license_plate:
+      default:
+        model: carattr/carattr.license_plate.v9.gpu.fnk
+    car_license_plate_quality:
+      default:
+        model: carattr/carattr.license_plate_quality.v3.gpu.fnk
+    car_license_plate_visibility:
+      default:
+        model: ''
+    car_make:
+      default:
+        model: ''
+    car_orientation:
+      default:
+        model: carattr/carattr.orientation.v0.gpu.fnk
+    car_quality:
+      default:
+        model: carattr/carattr.quality.v1.gpu.fnk
+    car_special_types:
+      default:
+        model: ''
+    car_special_types11:
+      default:
+        model: ''
+    car_special_types12:
+      default:
+        model: carattr/carattr.special_types12.v0.gpu.fnk
+    car_trash:
+      default:
+        model: ''
+    car_weight_types7:
+      default:
+        model: carattr/carattr.weight_types7.v0.gpu.fnk
+
+CPU
+
+extractors:
+  ...
+  models:
+    car_categories:
+      default:
+        model: carattr/carattr.categories.v1.cpu.fnk
+    car_color:
+      default:
+        model: ''
+    car_container_number:
+      default:
+        model: ''
+    car_description:
+      default:
+        model: carattr/carattr.description.v1.cpu.fnk
+    car_emben:
+      default:
+        model: carrec/bottas.cpu.fnk
+    car_license_plate:
+      default:
+        model: carattr/carattr.license_plate.v9.cpu.fnk
+    car_license_plate_quality:
+      default:
+        model: carattr/carattr.license_plate_quality.v3.cpu.fnk
+    car_license_plate_visibility:
+      default:
+        model: ''
+    car_make:
+      default:
+        model: ''
+    car_orientation:
+      default:
+        model: carattr/carattr.orientation.v0.cpu.fnk
+    car_quality:
+      default:
+        model: carattr/carattr.quality.v1.cpu.fnk
+    car_special_types:
+      default:
+        model: ''
+    car_special_types11:
+      default:
+        model: ''
+    car_special_types12:
+      default:
+        model: carattr/carattr.special_types12.v0.cpu.fnk
+    car_trash:
+      default:
+        model: ''
+    car_weight_types7:
+      default:
+        model: carattr/carattr.weight_types7.v0.cpu.fnk
+
+The following extractors are available:
+
+Extractor
+
+Configure as follows
+
+vehicle feature
+vector
+
+car_emben: carrec/bottas.cpu.fnk
+
+car_emben: carrec/bottas.gpu.fnk
+
+license plate
+number
+
+car_license_plate: carattr/carattr.license_plate.v9.cpu.fnk
+car_license_plate_quality: carattr/carattr.license_plate_quality.v3.cpu.fnk
+
+car_license_plate: carattr/carattr.license_plate.v9.gpu.fnk
+car_license_plate_quality: carattr/carattr.license_plate_quality.v3.gpu.fnk
+
+set of
+attributes:
+make / color
+/ model / body
+style
+
+car_description: carattr/carattr.description.v1.cpu.fnk
+
+car_description: carattr/carattr.description.v1.gpu.fnk
+
+vehicle image
+quality
+
+car_quality: carattr/carattr.quality.v1.cpu.fnk
+
+car_quality: carattr/carattr.quality.v1.gpu.fnk
+
+special vehicle
+
+car_special_types: carattr/carattr.special_types12.v0.cpu.fnk
+
+car_special_types: carattr/carattr.special_types12.v0.gpu.fnk
+
+vehicle category
+
+car_categories: carattr/carattr.categories.v1.cpu.fnk
+
+car_categories: carattr/carattr.categories.v1.gpu.fnk
+
+vehicle weight
+and body size
+
+car_weight_types7: carattr/carattr.weight_types7.v0.cpu.fnk
+
+car_weight_types7: carattr/carattr.weight_types7.v0.gpu.fnk
+
+vehicle
+orientation
+
+car_orientation: carattr/carattr.orientation.v0.cpu.fnk
+
+car_orientation: carattr/carattr.orientation.v0.gpu.fnk
+
+Note
+
+The default special vehicle recognition model is carattr.special_types12, specified in the car_special_types12 parameter. However, you may decide to bring an earlier special vehicle recognition model. Use the car_special_types11 parameter to enable the carattr.special_types11.v1 model or the car_special_types parameter to enable the carattr.special_types.v0 model. In the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py file, configure the default value of the CAR_SPECIAL_VEHICLE_TYPE_ATTRIBUTE parameter, which is set to 'car_special_types12', to specify the enabled special vehicle recognition extractor. E.g., if you enabled the carattr.special_types11.v1 model, specify 'CAR_SPECIAL_VEHICLE_TYPE_ATTRIBUTE': 'car_special_types11'.
+
+Modify the /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration file.
+
+In the models section, specify the vehicle detector, normalizer, and extractor models as shown in the example below:
+
+GPU
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+models:
+  ...
+  detectors:
+    ...
+    car:
+      fnk_path: /usr/share/findface-data/models/detector/car.gustav_normal.007.gpu.fnk
+      min_size: 60
+    ...
+  normalizers:
+    ...
+    car_norm:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.gpu.fnk
+    car_norm_quality:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.gpu.fnk
+    ...
+  extractors:
+    ...
+    car_quality:
+      fnk_path: /usr/share/findface-data/models/carattr/carattr.quality.v1.gpu.fnk
+      normalizer: car_norm_quality
+
+CPU
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+models:
+  ...
+  detectors:
+    ...
+    car:
+      fnk_path: /usr/share/findface-data/models/detector/car.gustav_normal.007.cpu.fnk
+      min_size: 60
+    ...
+  normalizers:
+    ...
+    car_norm:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.cpu.fnk
+    car_norm_quality:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.cpu.fnk
+    ...
+  extractors:
+    ...
+    car_quality:
+      fnk_path: /usr/share/findface-data/models/carattr/carattr.quality.v1.cpu.fnk
+      normalizer: car_norm_quality
+
+Make sure that the objects → car section is included:
+
+objects:
+  ...
+  car:
+    normalizer: car_norm
+    quality: car_quality
+    track_features: ''
+
+Open the /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml configuration file and make sure it contains the car section in detectors that looks similar to the example below. Note that the filter_min_quality parameter is set to 0.6 by default. You can increase it to get more accurate results from cameras and other video sources. The best practice is to set this value to 0.73.
+
+sudo vi /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml
+
+detectors:
+  ...
+  car:
+    filter_min_quality: 0.6
+    filter_min_size: 100
+    filter_max_size: 8192
+    roi: ''
+    fullframe_crop_rot: false
+    fullframe_use_png: false
+    jpeg_quality: 95
+    overall_only: true
+    realtime_post_first_immediately: false
+    realtime_post_interval: 1
+    realtime_post_every_interval: false
+    track_interpolate_bboxes: true
+    track_miss_interval: 1
+    track_overlap_threshold: 0.25
+    track_max_duration_frames: 0
+    track_send_history: false
+    post_best_track_frame: true
+    post_best_track_normalize: true
+    post_first_track_frame: false
+    post_last_track_frame: false
+    tracker_type: simple_iou
+    track_deep_sort_matching_threshold: 0.65
+    track_deep_sort_filter_unconfirmed_tracks: true
+    track_object_is_principal: false
+    track_history_active_track_miss_interval: 0
+    filter_track_min_duration_frames: 1
+    extractors_track_triggers: {}
+
+Note
+
+Configuration of the filter_min_quality parameter affects the results that you get from video sources only and does not affect vehicle counting results and quality of the vehicle images that are used in the records. To get more accurate counting results or vehicle records with better quality images, configure the MINIMUM_CAR_QUALITY parameter individually in the findface-multi-legacy.py configuration file. This setting will be described below.
+
+Enable recognition of vehicles and their attributes in the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file. Do the following:
+
+In the FFSECURITY section, set 'ENABLE_CARS': True.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+FFSECURITY = {
+    ...
+    # optional objects to detect
+    'ENABLE_CARS': True,
+    ...
+
+In the same section, you can configure the MINIMUM_CAR_QUALITY parameter. By default, it’s set to 0.6, which is the recommended minimum value for vehicle image quality, sufficient to make a record or use an object in a counter.
+
+FFSECURITY = {
+    ...
+    # minimum car quality sufficient to add it to a card and use object in counter
+    # p.s. set this parameter equals to `0.73` for more accurate results
+    'MINIMUM_CAR_QUALITY': 0.6,  # model: [carattr.quality.v1]
+    ...
+
+If you need more accurate counting results or vehicle records with better quality images, you can increase the MINIMUM_CAR_QUALITY threshold. The best practice is to set this value to 0.73.
+
+In the FFSECURITY section, specify the attributes you want to display for vehicle recognition events.
+
+# available features are: category, description, license_plate, orientation, special_vehicle_type, weight_type
+'CAR_EVENTS_FEATURES': ['license_plate', 'category', 'special_vehicle_type', 'description', 'weight_type', 'orientation'],
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+In the web interface, navigate to Video Source. Select a camera in the Cameras tab (or an uploaded file in the Uploads tab, or an external detector in the corresponding tab). Navigate to the General tab. Select Vehicles in the Detectors section.
+
+          

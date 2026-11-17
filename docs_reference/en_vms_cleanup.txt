@@ -1,0 +1,124 @@
+
+
+# Remove Video Records
+
+See also
+
+Configure Video Recorder
+
+There are two methods of video archive cleanup available in the system:
+
+Regular cleanup
+
+Manual cleanup via a console command
+
+In this section:
+
+Regular Video Cleanup
+
+Manual Video Cleanup
+
+Enable VMS Cleanup Settings in the UI
+
+## Regular Video Cleanup
+
+To configure the regular video cleanup, do the following:
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+Find the SERVICES section and set "vms_cleanup": True.
+
+SERVICES = {
+    "ffsecurity": {
+        ...
+        "vms_cleanup": True,
+    }
+}
+
+Find the VMS_CLEANUP_SETTINGS section and configure what video to remove, using the following parameters:
+
+'CLEANUP_BETWEEN_TRACKS': set True to remove video intervals that do not contain recognition events.
+
+'CLEANUP_ARCHIVE': set True to remove the entire video archive older than a given number of days.
+
+'ARCHIVE_CLEANUP_AGE': the maximum age of a video archive in the system, days. Applicable if 'CLEANUP_ARCHIVE': True.
+
+'BETWEEN_TRACKS_CLEANUP_START_AGE': time period (days) during which the entire video archive is kept in the system. After this period is over, the system starts cleaning up between tracks according to the CLEANUP_BETWEEN_TRACKS settings.
+
+'KEEP_EVENT_TYPES': event types that will be kept in the video archive, in the form of a dictionary, e.g., [‘face’, ‘body’, ‘car’].
+
+'KEEP_EVENT_BEFORE_AFTER': interval before and after a track with events that won’t be removed in order to preserve meaningful information related to them, seconds. The value must be less than CLEANUP_THRESHOLD.
+
+'CLEANUP_THRESHOLD': minimum interval between tracks with events, seconds. If the interval between tracks is shorter, it won’t be removed.
+
+'VMS_CLEANUP_SETTINGS': {
+    'CLEANUP_BETWEEN_TRACKS': True,
+    'CLEANUP_ARCHIVE': True,
+    'ARCHIVE_CLEANUP_AGE': 30,  # days
+    'BETWEEN_TRACKS_CLEANUP_START_AGE': 0,  # days
+    'KEEP_EVENT_TYPES': ['face', 'body', 'car'],
+    # Add `safe_time_interval` in seconds to each `track` subject to delete
+    # Prevents deletion of essential data.
+    # Should be lower than CLEANUP_THRESHOLD
+    'KEEP_EVENT_BEFORE_AFTER': 10,  # minimal allowed value
+    # Threshold between `intervals` in seconds.
+    # If duration between `tracks` < `CLEANUP_THRESHOLD`
+    # interval between tracks will not be added to deletion tasks
+    'CLEANUP_THRESHOLD': 360,  # minimal allowed value
+},
+
+Find the 'VMS_CLEANUP_SERVICE_SCHEDULE' parameter and specify a recurrence rule (RRULE) for scheduling video cleanup.
+
+Tip
+
+See the RRULE calculator here.
+
+# rrule (recurrence rule) for scheduling `vms_cleanup` service
+'VMS_CLEANUP_SERVICE_SCHEDULE': 'RRULE:FREQ=HOURLY;INTERVAL=3;WKST=MO',
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+## Manual Video Cleanup
+
+You can manually remove video chunks older than the given number of days by executing the command below. To set the number of days, use the –vms-videos-max-age argument.
+
+sudo docker exec -it findface-multi-findface-multi-legacy-1 /opt/findface-security/bin/python3 /tigre_prototype/manage.py cleanup_vms --vms-videos-max-age=30
+
+## Enable VMS Cleanup Settings in the UI
+
+By default, VMS cleanup settings are disabled in the UI. To work with VMS cleanup settings from the UI, configure the "vms" parameter in the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+In the FFSECURITY_UI_CONFIG section locate the "vms" parameter and set "enabled": True.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+FFSECURITY_UI_CONFIG = {
+    ...
+    "vms": {
+        "enabled": True,
+        ...
+    },
+}
+
+Make sure that VMS cleanup service is enabled in the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file. Find the SERVICES section and set "vms_cleanup": True.
+
+SERVICES = {
+    "ffsecurity": {
+        ...
+        "vms_cleanup": True,
+    }
+}
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+          

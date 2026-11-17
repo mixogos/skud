@@ -1,0 +1,54 @@
+
+
+# Headpose Recognition
+
+Headpose feature refers to the ability of the camera to detect and track the orientation and movement of a person’s head relative to the CCTV camera in real-time.
+
+Warning
+
+The headpose feature does not work when a person is wearing a medmask.
+
+To detect the headpose (head turn and head tilt), FindFace Multi uses pitch and yaw.
+
+Pitch refers to the rotation of the head around its horizontal axis, which runs from ear to ear. Positive pitch indicates that the head is tilted forward, while negative pitch indicates that the head is tilted backward.
+
+Yaw refers to the rotation of the head around its vertical axis, which runs from top to bottom. Positive yaw indicates that the head is turned to the right, while negative yaw indicates that the head is turned to the left.
+
+Pitch and yaw angles are measured relative to the camera and take on values from -90 to +90 degree.
+
+You can see the value of head turn and head tilt in the attributes section of Events and filter face events by these parameters.
+
+[img:headpose_event_en]
+
+## Possible Scenarios of Headpose Recognition
+
+Headpose recognition can be used in various scenarios where face recognition is used to improve accuracy and security, there are several of them:
+
+Physical Access Control System, PACS: improving employee access control systems by ensuring that the face of the employee matches the expected orientation. It means that if a person is near the camera, turns the head to the camera, but is not going to pass through the PACS, the access will not be provided, due to the pre-set value of the head position.
+
+Analytics of shopping center visitors: reducing the number of created low-quality face clusters. When a face cluster is forming, events corresponding to the specified values of the head rotation angles are taken into account. See more for clusters.
+
+## Configure Headpose Recognition
+
+To configure headpose angle thresholds for creating clusters, do the following:
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+Enable the headpose threshold by setting 'FACE_CLUSTER_EVENT_HEADPOSE_THRESHOLDS_ENABLE': True,.
+
+If necessary, modify the lowest and highest threshold to pitch and yaw angles.
+
+'FACE_CLUSTER_EVENT_YAW_ANGLE_LOWEST_THRESHOLD': -30,
+'FACE_CLUSTER_EVENT_YAW_ANGLE_HIGHEST_THRESHOLD': 30,
+'FACE_CLUSTER_EVENT_PITCH_ANGLE_LOWEST_THRESHOLD': -60,
+'FACE_CLUSTER_EVENT_PITCH_ANGLE_HIGHEST_THRESHOLD': 60,
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+           

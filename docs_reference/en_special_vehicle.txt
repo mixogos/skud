@@ -1,0 +1,37 @@
+
+
+# Special Vehicle Recognition
+
+FindFace Multi can recognize a special vehicle and its type. You can set up special vehicle recognition during the installation or enable it later, using the instruction in the Enable Vehicle and Vehicle Attribute Recognition section.
+
+Note
+
+Special vehicle recognition works for selected countries only and may not work for your country. For more information please contact your manager or our support team (support@ntechlab.com).
+
+The default special vehicle recognition model is carattr.special_types12.v0. It supports recognition of the following vehicle types:
+
+Taxi: taxi, including cargo taxi. In some cases, a cargo taxi can be defined as “other special”.
+
+Public road transport: route transport, i.e. buses, share taxis, trolleybuses.
+
+Carsharing: supported carsharing services are Citydrive, Yandex.Drive, Delimobil, BelkaCar. Carsharing services that look similar to those listed above, may also be recognized.
+
+Ambulance: ambulance, including mobile intensive care units (both white and yellow vehicles).
+
+Police: police, including traffic police cars.
+
+Rescue service: fire service and EMERCOM vehicles.
+
+Gas rescue and emergency services: overall yellow or white cars, including those with contrasting red doors, typical red stripes, and the 04 / 104 sign on board.
+
+Military: military vehicles, including the National Guard vehicles.
+
+Road service: road service vehicles, including municipal vehicles, construction equipment, and vehicles of the Center for the Organization of Road Traffic.
+
+Cash-in-transit: cash-in-transit vehicles.
+
+Other special: a special vehicle that does not fall within the above-listed types.
+
+Not special: not a special vehicle.
+
+          

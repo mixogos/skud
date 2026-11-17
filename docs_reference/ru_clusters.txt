@@ -1,0 +1,442 @@
+
+
+# Кластеры лиц, силуэтов, транспортных средств
+
+FindFace Multi поддерживает автоматическую кластеризацию объектов одного происхождения:
+
+Изображения лиц, принадлежащие одному и тому же человеку, образуют кластер лиц.
+
+Изображения силуэтов, принадлежащие одному и тому же человеку, образуют кластер силуэтов.
+
+Изображения одного и того же транспортного средства образуют кластер транспортных средств.
+
+Совокупные галереи кластеров лиц, силуэтов и транспортных средств доступны на вкладке Кластеры.
+
+Примечание
+
+Если для кластера лиц/силуэтов найдено совпадение с карточкой человека, он автоматически отобразится в данной карточке. По аналогии, кластер транспортных средств будет сохранен в соответствующей карточке транспортного средства.
+
+Важно
+
+По умолчанию кластеризация объектов отключена. Включите и настройте ее через файл конфигурации /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py .
+
+В этом разделе:
+
+Алгоритмы кластеризации
+
+Включение и настройка кластеризации
+
+Работа с галереями кластеров
+
+Просмотр кластеров. Фильтры
+
+Объединение и удаление кластеров
+
+Статическая галерея кластеров
+
+Ручная кластеризация
+
+## Алгоритмы кластеризации
+
+FindFace Multi использует следующие алгоритмы кластеризации объектов:
+
+Кластеризация в реальном времени. Данный алгоритм кластеризации обрабатывает эпизоды с целью выбора подходящих изображений объектов и кластеризует выбранные изображения. Он работает на лету после закрытия эпизода. Результаты кластеризации отображаются динамически на вкладке Кластеры и в соответствующей карточке.
+
+Для кластеризации используются не все эпизоды. Если эпизод соответствует всем требованиям (см. подробности ниже), система формирует кластер следующим образом:
+
+Выбирает событие наилучшего качества.
+
+Создает новую сущность cluster event (кластерное событие) в основной базе данных PostgreSQL. Сущность содержит метаданные выбранного события, вектор признаков объекта и миниатюру объекта, а также ссылку на родительский эпизод.
+
+Ищет похожий центроид объекта в галерее cluster_events базы данных векторов признаков Tarantool. Центроид объекта — это виртуальный вектор признаков, усредненный по всем объектам-близнецам, которые были обнаружены на данный момент (например, центроид лица — это вектор признаков, усредненный по всем изображениям лица одного и того же человека). Система обновляет похожий центроид, используя новое событие, если такой центроид найден. Иначе создается новый центроид.
+
+Кластеризация по расписанию. Данный алгоритм кластеризации перерабатывает и пересматривает кластерные события, созданные во время кластеризации в реальном времени. Использование данного алгоритма улучшает качество кластерного центроида, поскольку в этом случае центроид усредняется по большему массиву накопленных векторов признаков. Результаты кластеризации по расписанию отображаются после каждой запланированной итерации на вкладке Кластеры и в соответствующей карточке.
+
+Расписание задается в формате RRULE в параметре CLUSTERS_CLUSTERIZATION_SCHEDULE файла конфигурации /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py. Предпочтительны ночные часы, так как запланированная кластеризация занимает много времени и ресурсов ЦП.
+
+Важно
+
+Кластеризация по расписанию полностью перезаписывает содержимое галерей кластеров, включая идентификаторы. Вы можете закрепить определенные кластеры, включив настройки CLUSTERS_AUTO_PIN_HEURISTICS и PIN_MATCHED_CLUSTERS (см. ниже).
+
+## Включение и настройка кластеризации
+
+По умолчанию кластеризация отключена. Чтобы включить и настроить ее, выполните следующие действия:
+
+Откройте файл конфигурации /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py. Найдите раздел Clusters configuration.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+ # -- Clusters configuration --
+ 'ENABLE_NIGHT_CLUSTERIZATION': False,
+ 'ENABLE_REALTIME_CLUSTERIZATION': False,
+ # rrule (recurrence rule) for scheduling "night" clusterization
+ 'CLUSTERIZATION_SCHEDULE': 'RRULE:FREQ=DAILY;INTERVAL=1;WKST=MO;BYHOUR=0;BYMINUTE=0',
+ # clusterize only selected objects types (for realtime and nightly clusterization)
+ # available are: face, body, car
+ 'CLUSTERIZE_OBJECT_TYPES': ['face'],
+ # use no more than N the best quality events to calculate centroid and cluster features (None to disable)
+ 'CENTROID_MAX_SIZE': 20,
+ # save cluster events without emben and images (only keep thumbnail for the best event)
+ 'LONG_LIVING_CLUSTER_EVENTS': False,
+ # skip clusterization if unpinned cluster events count is greater than this value
+ 'CLUSTERIZATION_MAX_CLUSTER_EVENTS': None,
+ # cluster event to cluster matching confidence threshold
+ 'FACE_CLUSTER_CONFIDENCE_THRESHOLD': 0.702,  # FAR = 1.00E-08 # model: [nectarine_l_320]
+ 'BODY_CLUSTER_CONFIDENCE_THRESHOLD': 0.65,  # model: [durga]
+ # minimum required event quality for cluster creation
+ 'FACE_CLUSTER_EVENT_MIN_QUALITY': 0.42,  # model: [faceattr.quality.v5]
+ 'BODY_CLUSTER_EVENT_MIN_QUALITY': 0.6,  # model: [pedattr.quality.v0]
+ 'CAR_CLUSTER_EVENT_MIN_QUALITY': 0.6,  # model: [carattr.quality.v1]
+ # discard cluster event if `max_centroids` similar centroids found with confidence greater than `confidence`
+ 'FACE_CLUSTER_MAX_N_SIMILAR': {'enabled': False, 'max_centroids': 5, 'confidence': 0.702},  # FAR = 1.00E-08 # model: [nectarine_l_320]
+ 'BODY_CLUSTER_MAX_N_SIMILAR': {'enabled': False, 'max_centroids': 5, 'confidence': 0.65},
+ # minimum required object size in pixels for cluster creation
+ 'FACE_CLUSTER_EVENT_MIN_SIZE': 50,
+ 'BODY_CLUSTER_EVENT_MIN_SIZE': 50,
+ 'CAR_CLUSTER_EVENT_MIN_SIZE': 50,
+ # minimum required number events in episode for cluster creation
+ 'FACE_CLUSTER_EVENT_MIN_EPISODE_EVENTS': 1,
+ 'BODY_CLUSTER_EVENT_MIN_EPISODE_EVENTS': 1,
+ 'CAR_CLUSTER_EVENT_MIN_EPISODE_EVENTS': 1,
+ # age feature threshold for cluster creation
+ 'FACE_CLUSTER_EVENT_MIN_AGE_THRESHOLD': 16,
+ # headpose feature thresholds for cluster creation (in º)
+ 'FACE_CLUSTER_EVENT_HEADPOSE_THRESHOLDS_ENABLE': False,
+ 'FACE_CLUSTER_EVENT_YAW_ANGLE_LOWEST_THRESHOLD': -30,
+ 'FACE_CLUSTER_EVENT_YAW_ANGLE_HIGHEST_THRESHOLD': 30,
+ 'FACE_CLUSTER_EVENT_PITCH_ANGLE_LOWEST_THRESHOLD': -60,
+ 'FACE_CLUSTER_EVENT_PITCH_ANGLE_HIGHEST_THRESHOLD': 60,
+ # coefficient of dependence of the clustering threshold on the cluster event's quality
+ 'FACE_CLUSTER_SOFT_CLUSTERIZATION_COEFFICIENT': 0.1,
+ 'BODY_CLUSTER_SOFT_CLUSTERIZATION_COEFFICIENT': 0.1,
+ # match with clusters when no card objects matches found
+ 'MATCH_CLUSTERS': False,
+ # create auto cards for unmatched clusters
+ 'CREATE_AUTO_CARDS': False,
+ # pinned clusters keep their id and events after reclusterization
+ 'CLUSTERS_AUTO_PIN_HEURISTICS': {
+     'face': {
+         # pin clusters with `value` minimum cluster events
+         'min_events': {'enabled': True, 'value': 10},
+         # cluster's centroid similarity confidence is less than
+         'max_centroid_similarity_threshold': {'enabled': True, 'value': 0.545},  # FAR = 0.075 # nectarine_l_320
+         # minimum average event's quality
+         'min_average_events_quality': {'enabled': True, 'value': 0.42},
+     },
+     'body': {},
+     'car': {},
+ },
+ # always pin clusters with matched events (not affected by heuristics above)
+ 'PIN_MATCHED_CLUSTERS': False,
+ ...
+
+Включите кластеризацию в реальном времени, установив ENABLE_REALTIME_CLUSTERIZATION: True .
+
+При необходимости включите кластеризацию по расписанию, установив ENABLE_NIGHT_CLUSTERIZATION: True.
+
+Важно
+
+Включать кластеризацию по расписанию имеет смысл только в том случае, если включена кластеризация в реальном времени. В противном случае система не сформирует ни одного нового кластера, поскольку только кластеризация в реальном времени является поставщиком уникальных кластерных событий.
+
+...
+# -- Clusters configuration --
+    'ENABLE_NIGHT_CLUSTERIZATION': True,
+    'ENABLE_REALTIME_CLUSTERIZATION': True,
+...
+
+При необходимости задайте рекуррентное правило (RRULE), задающее расписание плановой кластеризации. Если правило не задано, кластеризация автоматически начинается в 00:00 GMT.
+
+Совет
+
+См. калькулятор RRULE.
+
+# rrule (recurrence rule) for scheduling clusters clusterization
+'CLUSTERIZATION_SCHEDULE': 'RRULE:FREQ=DAILY;INTERVAL=1;WKST=MO;BYHOUR=0;BYMINUTE=0',
+
+По умолчанию система формирует только кластеры лиц. Для того чтобы включить формирование кластеров силуэтов и транспортных средств, добавьте соответствующие типы объектов в следующую строку:
+
+# available are: face, body, car
+'CLUSTERIZE_OBJECT_TYPES': ['face','body','car'],
+
+При необходимости измените минимальное количество событий в используемых для кластеризации эпизодах. По умолчанию данное количество равно 1. Сделайте это отдельно для каждого типа объекта.
+
+# minimum required number events in episode for cluster creation
+'FACE_CLUSTER_EVENT_MIN_EPISODE_EVENTS': 3,
+'BODY_CLUSTER_EVENT_MIN_EPISODE_EVENTS': 3,
+'CAR_CLUSTER_EVENT_MIN_EPISODE_EVENTS': 2,
+
+При необходимости измените минимальное качество используемых для кластеризации изображений объектов. Сделайте это отдельно для каждого типа объекта.
+
+Примечание
+
+Поскольку данная настройка требует наличия высокого уровня знаний и опыта, мы настоятельно рекомендуем предварительно проконсультироваться с нашими техническими специалистами.
+
+# minimum required event quality for cluster creation
+'FACE_CLUSTER_EVENT_MIN_QUALITY': 0.42,  # model: [faceattr.quality.v5]
+'BODY_CLUSTER_EVENT_MIN_QUALITY': 0.6,  # model: [pedattr.quality.v0]
+'CAR_CLUSTER_EVENT_MIN_QUALITY': 0.6,  # model: [carattr.quality.v1]
+
+При необходимости измените порог уверенности алгоритма в совпадении объектов при сопоставлении кластерного события и кластера.
+
+Предупреждение
+
+Перед изменением данного параметра проконсультируйтесь с нашими специалистами по адресу support@ntechlab.com.
+
+# cluster event to cluster matching confidence threshold
+'FACE_CLUSTER_CONFIDENCE_THRESHOLD': 0.702,  # FAR = 1.00E-08 # model: [nectarine_l_320]
+'BODY_CLUSTER_CONFIDENCE_THRESHOLD': 0.65,  # model: [durga]
+
+Кластеризация по расписанию полностью перезаписывает все созданные кластеры. Вы можете «закрепить» определенные кластеры, т. е. сохранить их и связанные кластерные события, включая идентификаторы, нетронутыми. Для этого используйте следующие настройки:
+
+Примечание
+
+Данные настройки являются независимыми. При необходимости используйте обе.
+
+Примечание
+
+Данные настройки не влияют на кластеризацию в реальном времени. Она продолжит создавать новые кластерные события для закрепленных кластеров.
+
+CLUSTERS_AUTO_PIN_HEURISTICS: установите True или False для следующих параметров и укажите соответствующие значения:
+
+Примечание
+
+При необходимости сделайте это для каждого типа объекта.
+
+min_events: закрепить кластер, когда количество связанных с ним кластерных событий превысит заданное минимальное значение.
+
+max_centroid_similarity_threshold: закрепить кластер, если сходство между его центроидом и центроидами других кластеров меньше заданного порога. Если кластер похож на некоторые другие кластеры, существует вероятность того, что данные кластеры принадлежат одному человеку/транспортному средству. В этом случае система не закрепит такой кластер, чтобы иметь возможность провести повторную кластеризацию. Напротив, непохожие кластеры будут закреплены.
+
+min_average_events_quality: закрепить кластер, если среднее качество ассоциированных кластерных событий больше заданного минимального значения.
+
+# pinned clusters keep their id and events after reclusterization
+'CLUSTERS_AUTO_PIN_HEURISTICS': {
+    'face': {
+        # pin clusters with `value` minimum cluster events
+        'min_events': {'enabled': True, 'value': 10},
+        # cluster's centroid similarity confidence is less than
+        'max_centroid_similarity_threshold': {'enabled': True, 'value': 0.545},  # FAR = 0.075 # nectarine_l_320
+        # minimum average event's quality
+        'min_average_events_quality': {'enabled': True, 'value': 0.42},
+    },
+    'body': {},
+    'car': {},
+},
+
+Включите параметр PIN_MATCHED_CLUSTERS, чтобы закрепить кластеры и связанные с ними кластерные события, для которых есть совпадения в картотеке.
+
+ # always pin clusters with matched events (not affected by heuristics above)
+'PIN_MATCHED_CLUSTERS': True,
+
+При необходимости укажите максимальное количество кластерных событий в кластерах, которые являются «незакрепленными». По достижении данного количества кластеризация по расписанию будет автоматически отключена.
+
+# skip clusterization if unpinned cluster events count is greater than this value
+'CLUSTERIZATION_MAX_CLUSTER_EVENTS': None,
+
+Перезапустите контейнеры FindFace Multi. В веб-интерфейсе FindFace Multi появится вкладка Кластеры.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+## Работа с галереями кластеров
+
+### Просмотр кластеров. Фильтры
+
+Для того чтобы просмотреть галереи кластеров, перейдите на вкладку Кластеры. Выберите вкладку Лица, Силуэты или ТС, чтобы отобразить кластеры только для соответствующего объекта.
+
+[img:cluster_gallery_ru]
+
+При работе с галереями кластеров используйте следующие фильтры:
+
+Примечание
+
+Некоторые фильтры из приведенного ниже списка могут быть скрыты, в зависимости от активированной функциональности распознавания.
+
+Фильтры кластеров для лиц, силуэтов или ТС
+
+Совпадения: отобразить кластеры с совпадением/без совпадения или любые.
+
+Списки наблюдения: отобразить только кластеры по определенному списку наблюдения.
+
+Группы камер: отобразить только кластеры по определенной группе камер.
+
+Камеры: отобразить только кластеры по определенной камере.
+
+Название карточки: отобразить только кластеры по определенной карточке.
+
+Дата и время: отобразить только кластеры, сформированные в определенный период времени.
+
+Первое событие кластера: отобразить только первое событие кластера, сформированное в определенный период времени.
+
+Событие кластера: отобразить только события кластеров, сформированные в определенный период времени.
+
+ID: отобразить кластер с определенным ID.
+
+Специальные фильтры для кластеров лиц
+
+Возраст: отобразить кластеры с людьми определенного возраста.
+
+Пол: отобразить кластеры с людьми заданного пола.
+
+Борода: фильтровать кластеры по наличию бороды.
+
+Очки: фильтровать кластеры по наличию очков на лице.
+
+Эмоции: отобразить кластеры с заданными эмоциями.
+
+Медицинская маска: фильтровать кластеры по наличию медицинской маски.
+
+Специальные фильтры для кластеров силуэтов
+
+Пол по силуэту: отобразить кластеры с силуэтами людей заданного пола.
+
+Возраст по силуэту: отобразить кластеры с силуэтами людей определенного возраста.
+
+Головной убор: отобразить только кластеры с людьми в головном уборе заданного типа: шапка/шляпа/кепка, капюшон/платок, без головного убора.
+
+Жилет: отобразить только кластеры с людьми, одетыми в жилет заданного цвета.
+
+Каска: отображать только кластеры с людьми, одетыми в каску заданного цвета.
+
+Цвет верха одежды: отобразить только кластеры с людьми, одетыми в одежду заданного цвета (верх).
+
+Цвет низа одежды: отобразить только кластеры с людьми, одетыми в одежду заданного цвета (низ).
+
+Тип верха одежды: отобразить только те кластеры, в которых человек носит одежду верха заданного типа: куртка, пальто, безрукавка, толстовка, футболка, рубашка, платье.
+
+Низ одежды: отобразить только те кластеры, в которых человек носит одежду низа заданного типа: брюки, юбка, шорты, неопределенный.
+
+Верх одежды: отобразить только те кластеры, в которых человек носит одежду верха заданной обобщенной категории: с длинными рукавами, с короткими рукавами, без рукавов.
+
+Специальные фильтры для кластеров транспортных средств
+
+Марка: фильтровать кластеры по марке транспортного средства.
+
+Модель: фильтровать кластеры по модели транспортного средства.
+
+Тип кузова: отобразить кластеры с транспортными средствами заданного типа кузова.
+
+Цвет кузова: отобразить кластеры с транспортного средства заданного цвета кузова.
+
+Страна: отобразить кластеры с транспортными средствами, зарегистрированными в заданной стране.
+
+Регистрационный номер: найти транспортное средство с заданным номером.
+
+Регион: отобразить кластеры с транспортными средствами, зарегистрированными в заданном регионе.
+
+Цвет номера: отобразить кластеры с заданным цветом регистрационного номера транспортного средства.
+
+Спецтранспорт: отображать только кластеры с транспортными средствами, принадлежащими заданному типу: полиция, автомобили МЧС и пожарные машины, газоспасательные и аварийно-спасательные службы, скорая помощь, военная техника, коммунальная, строительная техника, прочие.
+
+Категория ТС: отображать только кластеры с транспортными средствами, принадлежащими заданной категории: мотоцикл, скутер, легковой автомобиль с прицепом, грузовик, грузовик с прицепом, автобус, сочлененный автобус прочие.
+
+Вес и размер ТС: отобразить кластеры с транспортными средствами заданного веса и размера кузова.
+
+Примечание
+
+Регион регистрационного знака определяется только для Объединенных Арабских Эмиратов (ОАЭ) и Таиланда. Цвет регистрационного знака определяется только для Саудовской Аравии. Для других стран значения этих атрибутов будут выводиться как неизвестные в результатах распознавания.
+
+Щелкните по нужному кластеру, чтобы просмотреть связанные с ним кластерные события. Вы будете перенаправлены на страницу События кластера.
+
+### Объединение и удаление кластеров
+
+Для того чтобы вручную объединить несколько кластеров, выберите их один за другим и нажмите Объединить.
+
+Примечание
+
+По умолчанию кластеры транспортных средств формируются только по номерному знаку. В этом случае невозможно объединить два кластера транспортных средств с разными номерными знаками.
+
+Для того чтобы удалить кластер, выберите его и нажмите Удалить.
+
+[img:cluster_merge_delete_ru]
+
+## Статическая галерея кластеров
+
+Иногда бывает необходимо завершить кластеризацию объектов в определенный момент времени, а затем оперировать статической галереей сформированных кластеров.
+
+Для отображения вкладки Кластеры при отключенной кластеризации выполните следующие действия:
+
+Откройте файл конфигурации /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+В раздел SERVICES вручную добавьте строку "clusters": True, как показано в примере ниже:
+
+...
+SERVICES = {
+    "ffsecurity": {
+        ...
+        "clusters": True,
+    }
+...
+
+Отключите процессы кластеризации в реальном времени и по расписанию.
+
+...
+'ENABLE_NIGHT_CLUSTERIZATION': False,
+'ENABLE_REALTIME_CLUSTERIZATION': False,
+
+Выполните перезапуск контейнеров FindFace Multi.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+## Ручная кластеризация
+
+Для того чтобы вручную запустить процесс кластеризации, используйте утилиту run_clusterization.
+
+Вы можете вызвать справку по опциям run_clusterization, выполнив следующую команду:
+
+ sudo docker exec -it findface-multi-findface-multi-legacy-1 /opt/findface-security/bin/python3 /tigre_prototype/manage.py run_clusterization --help
+
+ usage: manage.py run_clusterization [-h]
+                                  [--object-types OBJECT_TYPES [OBJECT_TYPES ...]]
+                                  [--force] [--configuration CONFIGURATION]
+                                  [--version] [-v {0,1,2,3}]
+                                  [--settings SETTINGS]
+                                  [--pythonpath PYTHONPATH] [--traceback]
+                                  [--no-color] [--force-color]
+                                  [--skip-checks]
+
+ optional arguments:
+-h, --help            show this help message and exit
+--object-types OBJECT_TYPES [OBJECT_TYPES ...]
+                      Clusterize selected object types. Uses
+                      CLUSTERIZE_OBJECT_TYPES from config if not provided.
+                      Allowed types: face, body, car
+--force               Force clusterization even if
+                      CLUSTERIZATION_MAX_CLUSTER_EVENTS condition is met
+--configuration CONFIGURATION
+                      The name of the configuration class to load, e.g.
+                      "Development". If this isn't provided, the
+                      DJANGO_CONFIGURATION environment variable will be
+                      used.
+--version             show program's version number and exit
+-v {0,1,2,3}, --verbosity {0,1,2,3}
+                      Verbosity level; 0=minimal output, 1=normal output,
+                      2=verbose output, 3=very verbose output
+--settings SETTINGS   The Python path to a settings module, e.g.
+                      "myproject.settings.main". If this isn't provided, the
+                      DJANGO_SETTINGS_MODULE environment variable will be
+                      used.
+--pythonpath PYTHONPATH
+                      A directory to add to the Python path, e.g.
+                      "/home/djangoprojects/myproject".
+--traceback           Raise on CommandError exceptions
+--no-color            Don't colorize the command output.
+--force-color         Force colorization of the command output.
+--skip-checks         Skip system checks.
+
+Данная утилита позволяет по отдельности запускать кластеризацию лиц, силуэтов и транспортных стредств, а также выполнять принудительную кластеризацию, если максимальное количество событий кластера превышает значение параметра CLUSTERIZATION_MAX_CLUSTER_EVENTS (см. Включение и настройка кластеризации). Например, чтобы принудительно запустить кластеризацию лиц, выполните следующую команду:
+
+sudo docker exec -it findface-multi-findface-multi-legacy-1 /opt/findface-security/bin/python3 /tigre_prototype/manage.py run_clusterization --object-types face --force
+
+См.также
+
+Картотека
+
+Анализ взаимодействий
+
+Анализ аудитории
+

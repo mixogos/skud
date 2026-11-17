@@ -1,0 +1,183 @@
+
+
+# Welcome to FindFace Multi documentation!
+
+FindFace Multi is a multifunctional multi-object video analytics software, based on FindFace Server, a cutting-edge AI recognition technology. FindFace Multi is a turnkey solution that you can harness in such areas as retail, banking, social networking, entertainment, sports, event management, dating services, video surveillance, public safety, homeland security, and others.
+
+FindFace Multi can detect, identify, and analyze the following objects in the video:
+
+Human faces, along with recognition of such facial attributes as gender, age, emotions, glasses, face mask, beard, and many others. The integrated 2D anti-spoofing system ensures that it is a live person in front of a camera and eliminates the possibility of fraud using images on paper or mobile device screens.
+
+Human bodies (silhouettes), along with recognition of clothing type and color.
+
+Vehicles, with recognition of such vehicle attributes as make, model, body style, color, license plate number, and others.
+
+After FindFace Multi identifies and analyzes an object, it notifies responsible officials about its appearance within fractions of a second. Additional information about the object, such as a person’s gender, age, car license plate number, etc., is displayed in the relevant recognition event.
+
+FindFace Multi supports the integration of third-party solutions via HTTP API and webhooks, so you can enhance your current system or application with multi-object recognition functionality.
+
+Core features
+
+AI-based platform.
+
+Comprehensive records that can accommodate aggregated information about a person and a car/vehicle.
+
+Fast and robust real-time video monitoring against a record index.
+
+Multi-object identification and analytics: faces, bodies (silhouettes), vehicles.
+
+Support for live video and archives, most video formats and codecs that FFmpeg can decode.
+
+Advanced camera management, including ONVIF support, the possibility of changing video orientation, fine-tuning a camera for each object type, video recording (if enabled).
+
+Multi-object verification: faces, bodies, vehicles.
+
+AI recognition of gender, age, emotions, glasses, beard, face mask, and other face attributes.
+
+AI face liveness detector.
+
+AI recognition of an exact person and vehicle.
+
+AI recognition of clothing type and color.
+
+AI recognition of special vehicles, a vehicle’s make, model, body style, color, and license plate number.
+
+Database search for faces, bodies, vehicles.
+
+Possibility of counting faces, bodies, and vehicles on connected cameras and measuring distance between bodies. Single- and multi-camera counting support.
+
+Video surveillance. Video Recorder.
+
+Possibility of monitoring the presence of people in given areas, using rules and monitoring schedules.
+
+Automatic clustering of objects of the same origin (face/body images belonging to the same person, images of the same vehicle), enriched with the end-to-end integration with the record index.
+
+Deployment environment
+
+Developer-friendly installer and user-friendly interface.
+
+Single- and multi-host deployment.
+
+Increased performance and fault-tolerance in high load systems with numerous cameras and clients.
+
+Network or on-premise licensing.
+
+CPU- and GPU-based acceleration for your choice.
+
+System security
+
+Advanced user management.
+
+Authentication based on a password, certificate, and face recognition for guaranteed system protection.
+
+Record security.
+
+Comprehensive, friendly, searchable audit logs.
+
+Backup and recovery utilities.
+
+Possibility of monitoring user sessions and blocking devices without deactivating user accounts.
+
+Ethical data usage
+
+Full compliance with personal data protection laws (GDPR and similar).
+
+Make the most of your system
+
+Social interaction analysis.
+
+Audience analysis.
+
+Detailed reports on face recognition events, episodes, search events, clusters, counters, cameras, records, audit logs, and audience.
+
+Face liveness detector as a standalone service.
+
+Useful little things
+
+Quick record index creation.
+
+Complete record customization.
+
+Deduplication support for events and records.
+
+Extended set of search filters.
+
+Scheduled database cleanup.
+
+Integration
+
+Integration via HTTP API and webhooks.
+
+Integrations with favored vendors.
+
+Edge device integration.
+
+Contents
+
+What’s New in FindFace Multi 2.2
+
+System Administrator’s Guide
+
+Architecture
+
+Requirements
+
+Deploy and Remove FindFace Multi
+
+Administration and Basic Configuration
+
+Configure FindFace Multi Neural Networks
+
+Maintenance and Troubleshooting
+
+Appendices
+
+User’s Guide
+
+Getting Started
+
+Web Interface Basics
+
+Use FindFace Multi Functions
+
+Record Index
+
+Video Sources
+
+Line Crossing
+
+Events and Episodes of Object Recognition
+
+Search Objects in System
+
+Verify Two Objects
+
+Face, Body, Vehicle Counters
+
+Face, Body, Vehicle Clusters
+
+Reports
+
+Audit Log
+
+People-Related Analytics
+
+Video Surveillance
+
+Integrations
+
+HTTP API
+
+Webhooks
+
+External VMS
+
+External Detectors
+
+Alarm Monitor
+
+Alarm Feed
+
+Analytical BI Service
+
+          

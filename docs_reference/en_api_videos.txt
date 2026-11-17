@@ -1,0 +1,736 @@
+
+
+# Videos
+
+## List video archives
+
+To list video archives, use the following method:
+
+GET /videos/
+
+The REQUEST contains QUERY-STRING PARAMETERS.
+
+Name
+
+Schema
+
+Description
+
+case_in
+
+array of integer
+
+Select videos included in these cases.
+
+created_date_gt
+
+date-time
+
+Select objects with created_date greater than this value.
+
+created_date_gte
+
+date-time
+
+Select objects with created_date greater than or equal to this value.
+
+created_date_last_n_days
+
+number
+
+Select objects with created_date in last N days.
+
+created_date_lt
+
+date-time
+
+Select objects with created_date less than this value.
+
+created_date_lte
+
+date-time
+
+Select objects with created_date less than or equal to this value.
+
+created_date_nth_full_week
+
+number
+
+Select objects with created_date in last Nth week (including Sunday and Saturday).
+
+created_date_nth_work_week
+
+number
+
+Select objects with created_date in last Nth week (only working days, i.e. excluding Sunday and Saturday).
+
+limit
+
+string
+
+Number of results to return per page.
+
+name
+
+string
+
+Select video archives with this name field.
+
+ordering
+
+string
+
+Available fields: id, created_date, name.
+
+page
+
+string
+
+Pagination cursor value.
+
+save_to
+
+string
+
+Select video archives with this save_to field.
+
+For example, select some number of results for limit.
+
+CURL example
+
+curl -X GET "http://<findface-ip:port>/videos/?limit=2" \
+ -H "Accept: application/json" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Token <token>" \
+
+If the response is successful (OK: 200), it returns an object that contains with the following parameters. Example.
+
+Name
+
+Schema
+
+next_page
+
+string┃null
+
+prev_page
+
+string┃null
+
+results
+
+array
+
+The results contain an array with the following parameters:
+
+Name
+
+Schema
+
+Description
+
+id*
+
+integer 🆁
+
+ID of the video archives.
+
+camera_group*
+
+integer
+
+Camera group.
+
+name*
+
+string┃null
+
+Name of the video archives. Constraints: Max 256 chars.
+
+url
+
+string┃null
+
+URL.
+
+camera
+
+integer┃null
+
+Camera.
+
+processing_start_date*
+
+date-time 🆁
+
+Video processing start date.
+
+active*
+
+boolean 🆁
+
+Processing is active.
+
+screenshot*
+
+uri 🆁
+
+Screenshot URL.
+
+stream_settings
+
+{…}
+
+Serializer mixin that raises ValidationError if excess fields are presented. Can be used in nested serializers.
+
+source_len*
+
+number 🆁
+
+Source length in seconds.
+
+health_status*
+
+{…}
+
+Additional status information.
+
+finished*
+
+boolean 🆁
+
+true if the video processing is finished.
+
+queued*
+
+boolean 🆁
+
+true if the video is in the processing queue.
+
+face_count*
+
+integer 🆁
+
+Number of created faces.
+
+file_size*
+
+integer 🆁
+
+Video file size in the archive.
+
+created_date*
+
+date-time 🆁
+
+Object creation date.
+
+body_count*
+
+integer 🆁
+
+Number of created bodies.
+
+car_count*
+
+integer 🆁
+
+Number of created cars.
+
+case
+
+integer┃null
+
+Case.
+
+face_cluster_count*
+
+integer┃null 🆁
+
+Count of face clusters created from this video.
+
+body_cluster_count*
+
+integer┃null 🆁
+
+Count of body clusters created from this video.
+
+car_cluster_count*
+
+integer┃null 🆁
+
+Count of car clusters created from this video.
+
+Note
+
+Cases are not supported in FindFace Multi 2.0+ and are kept in API only.
+
+Response example
+
+{
+ "next_page": null,
+ "prev_page": null,
+ "results": [
+   {
+     "id": 2,
+     "camera_group": 1,
+     "name": "file.mp4",
+     "url": null,
+     "camera": null,
+     "processing_start_date": null,
+     "active": false,
+     "screenshot": "http://<findface-ip:port>/videos/2/screenshot/",
+     "stream_settings": {
+       "detectors": {
+         "face": {
+           "filter_max_size": 8192,
+           "filter_min_quality": 0.45,
+           "filter_min_size": 60,
+           "fullframe_crop_rot": false,
+           "fullframe_use_png": false,
+           "jpeg_quality": 95,
+           "overall_only": true,
+           "post_best_track_frame": true,
+           "post_best_track_normalize": true,
+           "post_first_track_frame": false,
+           "post_last_track_frame": false,
+           "realtime_post_every_interval": false,
+           "realtime_post_first_immediately": false,
+           "realtime_post_interval": 1,
+           "roi": "",
+           "track_interpolate_bboxes": true,
+           "track_max_duration_frames": 0,
+           "track_miss_interval": 1,
+           "track_overlap_threshold": 0.25,
+           "track_send_history": false,
+           "tracker_type": "simple_iou",
+           "track_deep_sort_matching_threshold": 0.65,
+           "track_deep_sort_filter_unconfirmed_tracks": true
+         },
+         "body": null,
+         "car": null
+       },
+       "disable_drops": true,
+       "ffmpeg_format": "",
+       "ffmpeg_params": [],
+       "imotion_threshold": 0,
+       "play_speed": -1,
+       "rot": "",
+       "router_timeout_ms": 15000,
+       "router_verify_ssl": true,
+       "start_stream_timestamp": 0,
+       "stream_data_filter": "",
+       "use_stream_timestamp": false,
+       "video_transform": "",
+       "enable_recorder": false,
+       "enable_liveness": false
+     },
+     "source_len": null,
+     "health_status": {
+       "enabled": false,
+       "status": "DISABLED",
+       "msg": "",
+       "statistic": {
+         "processed_duration": 0,
+         "faces_posted": 0,
+         "faces_failed": 0,
+         "faces_not_posted": 0,
+         "processing_fps": 0,
+         "frames_dropped": 0,
+         "frames_processed": 0,
+         "frames_imotion_skipped": 0,
+         "decoding_soft_errors": 0,
+         "frame_width": 0,
+         "frame_height": 0,
+         "last_stream_timestamp": 0,
+         "objects": null,
+         "job_starts": 0
+       },
+       "code": "gray",
+       "code_desc": "Обработка видео не запущена"
+     },
+     "finished": false,
+     "queued": false,
+     "face_count": 0,
+     "file_size": 2259950,
+     "created_date": "2023-01-12T08:57:36.811305Z",
+     "body_count": 0,
+     "car_count": 0,
+     "case": null,
+     "face_cluster_count": 0,
+     "body_cluster_count": 0,
+     "car_cluster_count": 0
+   }
+ ]
+}
+
+## Add a new video archive
+
+To add video archives, use the following method:
+
+POST /videos/
+
+The REQUEST BODY is required and contains application/json object with the following parameters:
+
+Name
+
+Schema
+
+Description
+
+camera_group*
+
+integer
+
+ID value of camera group.
+
+name*
+
+string┃null
+
+Name of the video archive. Constraints: 1 to 256 chars.
+
+url
+
+string┃null
+
+Constraints: Min 1 chars.
+
+camera
+
+integer┃null
+
+Camera.
+
+stream_settings
+
+{…}
+
+Serializer mixin that raises ValidationError if excess fields are presented. Can be used in nested serializers.
+
+case
+
+integer┃null
+
+Case.
+
+Note
+
+Cases are not supported in FindFace Multi 2.0+ and are kept in API only.
+
+Request example
+
+Tip
+
+This example is given for reference only, substitute your values in the corresponding fields. You may fill in only the required fields, and the others will be by default.
+
+{
+ "camera_group": 0,
+ "name": "A",
+ "url": "A",
+ "camera": 0,
+ "stream_settings": {
+   "detectors": {
+     "face": {
+       "filter_max_size": 0,
+       "filter_min_quality": 0,
+       "filter_min_size": 0,
+       "fullframe_crop_rot": false,
+       "fullframe_use_png": false,
+       "jpeg_quality": 0,
+       "overall_only": false,
+       "post_best_track_frame": false,
+       "post_best_track_normalize": false,
+       "post_first_track_frame": false,
+       "post_last_track_frame": false,
+       "realtime_post_every_interval": false,
+       "realtime_post_first_immediately": false,
+       "realtime_post_interval": 0,
+       "roi": "string",
+       "track_interpolate_bboxes": false,
+       "track_max_duration_frames": 0,
+       "track_miss_interval": 0,
+       "track_overlap_threshold": 0,
+       "track_send_history": false,
+       "tracker_type": "string",
+       "track_deep_sort_matching_threshold": 0,
+       "track_deep_sort_filter_unconfirmed_tracks": false
+     },
+     "body": {
+       "filter_max_size": 0,
+       "filter_min_quality": 0,
+       "filter_min_size": 0,
+       "fullframe_crop_rot": false,
+       "fullframe_use_png": false,
+       "jpeg_quality": 0,
+       "overall_only": false,
+       "post_best_track_frame": false,
+       "post_best_track_normalize": false,
+       "post_first_track_frame": false,
+       "post_last_track_frame": false,
+       "realtime_post_every_interval": false,
+       "realtime_post_first_immediately": false,
+       "realtime_post_interval": 0,
+       "roi": "string",
+       "track_interpolate_bboxes": false,
+       "track_max_duration_frames": 0,
+       "track_miss_interval": 0,
+       "track_overlap_threshold": 0,
+       "track_send_history": false,
+       "tracker_type": "string",
+       "track_deep_sort_matching_threshold": 0,
+       "track_deep_sort_filter_unconfirmed_tracks": false
+     },
+     "car": {
+       "filter_max_size": 0,
+       "filter_min_quality": 0,
+       "filter_min_size": 0,
+       "fullframe_crop_rot": false,
+       "fullframe_use_png": false,
+       "jpeg_quality": 0,
+       "overall_only": false,
+       "post_best_track_frame": false,
+       "post_best_track_normalize": false,
+       "post_first_track_frame": false,
+       "post_last_track_frame": false,
+       "realtime_post_every_interval": false,
+       "realtime_post_first_immediately": false,
+       "realtime_post_interval": 0,
+       "roi": "string",
+       "track_interpolate_bboxes": false,
+       "track_max_duration_frames": 0,
+       "track_miss_interval": 0,
+       "track_overlap_threshold": 0,
+       "track_send_history": false,
+       "tracker_type": "string",
+       "track_deep_sort_matching_threshold": 0,
+       "track_deep_sort_filter_unconfirmed_tracks": false
+     }
+   },
+   "disable_drops": false,
+   "ffmpeg_format": "string",
+   "ffmpeg_params": [
+     "A"
+   ],
+   "imotion_threshold": 0,
+   "play_speed": 0,
+   "rot": "string",
+   "router_timeout_ms": 0,
+   "router_verify_ssl": false,
+   "start_stream_timestamp": 0,
+   "stream_data_filter": "string",
+   "use_stream_timestamp": false,
+   "video_transform": "string",
+   "enable_recorder": false,
+   "enable_liveness": false
+ },
+ "case": 0
+}
+
+For example, you may send these parameters.
+
+{
+ "camera_group": 1,
+ "name": "Pitt&Jolie"
+}
+
+CURL example
+
+curl -X POST "http://<findface-ip:port>/videos/" \
+  -H "Accept: application/json" \
+  -H "Content-Language: ru" \
+  -H "Accept-Language: ru" \
+  -H "Authorization: Token <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"camera_group":1,"name":"Pitt&Jolie"}' \
+
+If the response is successful (Created: 201), it returns an object that contains parameters. Example.
+
+Response example
+
+{
+ "id": 6,
+ "camera_group": 1,
+ "name": "Pitt&Jolie",
+ "url": null,
+ "camera": null,
+ "processing_start_date": null,
+ "active": false,
+ "screenshot": "http://<findface-ip:port>/videos/6/screenshot/",
+ "stream_settings": {
+   "detectors": {
+     "face": {
+       "filter_max_size": 8192,
+       "filter_min_quality": 0.45,
+       "filter_min_size": 60,
+       "fullframe_crop_rot": false,
+       "fullframe_use_png": false,
+       "jpeg_quality": 95,
+       "overall_only": true,
+       "post_best_track_frame": true,
+       "post_best_track_normalize": true,
+       "post_first_track_frame": false,
+       "post_last_track_frame": false,
+       "realtime_post_every_interval": false,
+       "realtime_post_first_immediately": false,
+       "realtime_post_interval": 1,
+       "roi": "",
+       "track_interpolate_bboxes": true,
+       "track_max_duration_frames": 0,
+       "track_miss_interval": 1,
+       "track_overlap_threshold": 0.25,
+       "track_send_history": false,
+       "tracker_type": "simple_iou",
+       "track_deep_sort_matching_threshold": 0.65,
+       "track_deep_sort_filter_unconfirmed_tracks": true
+     },
+     "body": {
+       "filter_max_size": 8192,
+       "filter_min_quality": 0.6,
+       "filter_min_size": 70,
+       "fullframe_crop_rot": false,
+       "fullframe_use_png": false,
+       "jpeg_quality": 95,
+       "overall_only": true,
+       "post_best_track_frame": true,
+       "post_best_track_normalize": true,
+       "post_first_track_frame": false,
+       "post_last_track_frame": false,
+       "realtime_post_every_interval": false,
+       "realtime_post_first_immediately": false,
+       "realtime_post_interval": 1,
+       "roi": "",
+       "track_interpolate_bboxes": true,
+       "track_max_duration_frames": 0,
+       "track_miss_interval": 1,
+       "track_overlap_threshold": 0.25,
+       "track_send_history": false,
+       "tracker_type": "simple_iou",
+       "track_deep_sort_matching_threshold": 0.65,
+       "track_deep_sort_filter_unconfirmed_tracks": true
+     },
+     "car": {
+       "filter_max_size": 8192,
+       "filter_min_quality": 0.73,
+       "filter_min_size": 100,
+       "fullframe_crop_rot": false,
+       "fullframe_use_png": false,
+       "jpeg_quality": 95,
+       "overall_only": true,
+       "post_best_track_frame": true,
+       "post_best_track_normalize": true,
+       "post_first_track_frame": false,
+       "post_last_track_frame": false,
+       "realtime_post_every_interval": false,
+       "realtime_post_first_immediately": false,
+       "realtime_post_interval": 1,
+       "roi": "",
+       "track_interpolate_bboxes": true,
+       "track_max_duration_frames": 0,
+       "track_miss_interval": 1,
+       "track_overlap_threshold": 0.25,
+       "track_send_history": false,
+       "tracker_type": "simple_iou",
+       "track_deep_sort_matching_threshold": 0.65,
+       "track_deep_sort_filter_unconfirmed_tracks": true
+     }
+   }
+ },
+ "source_len": null,
+ "health_status": {
+   "enabled": false,
+   "status": "WAITING_FOR_SYNC",
+   "msg": "",
+   "statistic": {},
+   "code": "red",
+   "code_desc": "Отсутствует задача в видео менеджере. Дождитесь синхронизации."
+ },
+ "finished": false,
+ "queued": false,
+ "face_count": 0,
+ "file_size": 0,
+ "created_date": "2023-01-18T08:38:52.119129Z",
+ "body_count": 0,
+ "car_count": 0,
+ "case": null,
+ "face_cluster_count": 0,
+ "body_cluster_count": 0,
+ "car_cluster_count": 0
+}
+
+Then point its id to upload the source file with PUT /videos/{id}/upload/source_file/.
+
+## Upload video file
+
+To upload a video file, use the following method:
+
+PUT /videos/{id}/upload/source_file/
+
+The request contains required PATH PARAMETERS:
+
+Name
+
+Schema
+
+Description
+
+id*
+
+integer
+
+A unique integer value identifying this video.
+
+In REQUEST BODY attach your video source file with id of the video archive.
+
+Returns:
+
+Created: 201 – in success.
+
+Not Found: 404 – if fail.
+
+CURL example
+
+curl -X PUT "http://<findface-ip:port>/videos/6/upload/source_file/" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Token <token>" \
+ -H "Content-Type: video/mp4" \
+ --data-binary @pittjolie.mp4 \
+
+## Start video archive processing
+
+To start video archive processing, use the following method:
+
+POST /videos/{id}/process/
+
+The REQUEST contains id in PATH PARAMETERS, identifying unique integer value of the video archive.
+
+CURL example
+
+curl -X POST "http://<findface-ip:port>/videos/6/process/" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Token <token>" \
+
+Returns:
+
+OK: 200 – in success.
+
+Not Found: 404 – if fail.
+
+## Useful requests
+
+GET /videos/
+POST /videos/
+GET /videos/{id}/
+PUT /videos/{id}/
+DELETE /videos/{id}/
+POST /videos/{id}/process/
+GET /videos/{id}/screenshot/
+POST /videos/{id}/screenshot/
+POST /videos/{id}/stop/
+PUT /videos/{id}/upload/source_file/
+GET /videos/count/
+
+          

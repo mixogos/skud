@@ -1,0 +1,25 @@
+
+
+# Interaction Tracking
+
+FindFace Multi can provide interaction tracking and analysis. To harness this functionality, you must enable face clustering.
+
+When tracking interactions, the system automatically determines a circle of people with whom a person has previously been in contact. For each person from the first circle, the system builds another circle of connected people, and so on. Overall, interaction analysis is three-circles deep.
+
+Note
+
+You can track interactions between bodies and vehicles as well. Access this functionality via HTTP API. Note that body and vehicle clustering must be enabled beforehand.
+
+The interaction analysis is available on the Interaction Tracking tab.
+
+[img:interaction_en]
+
+Tip
+
+You can also display the circle of connected people right from the Clusters tab and Record index tab by clicking on the handshake icon.
+
+[img:interaction_clusters_handshake_en]
+
+On the Interaction Tracking tab, click on a person to display their first circle of interactions and associated events. Keep on to unveil the entire tree of interactions.
+
+[img:interaction_circles_en]

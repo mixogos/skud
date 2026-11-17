@@ -1,0 +1,114 @@
+
+
+# Post-deployment Procedures and How-to’s
+
+After you are finished with the FindFace Multi deployment, perform the procedures below.
+
+In this section:
+
+Specify Time Zone
+
+License Instance
+
+Configure Logging
+
+Useful Docker Commands
+
+## Specify Time Zone
+
+The time zone on the FindFace Multi server determines the time in reports, logs, and names of such FindFace Multi artifacts as detection full frames and thumbnails, etc.
+
+The time zone is specified in the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file, either in the Region/Country/City or Etc/GMT+H format. The best way to do so is to copy/paste your time zone from this table on Wikipedia.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+# time zone
+TIME_ZONE = 'America/Argentina/Buenos_Aires'
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+## License Instance
+
+FindFace Multi provides several licensing options. Whichever option you choose, you upload the FindFace Multi license file via the main web interface http://<Host_IP_address>/#/license. To access the web interface, use the superuser credentials.
+
+Important
+
+Do not disclose the superuser (Super Administrator) credentials to others. To administer the system, create a new user with administrator privileges. Whatever the role, the Super Administrator cannot be deprived of its rights.
+
+Refer to the Licensing section to learn about the licensing options available.
+
+## Configure Logging
+
+By default, the FindFace Multi processes are logged to Docker container logs,  which can be accessed via the docker logs and docker service logs commands. In addition, Docker uses the json-file logging driver, which caches container logs in JSON.  You can configure Docker to use another logging driver, choosing from the multiple logging mechanisms available. See Logging to learn how to do it.
+
+## Useful Docker Commands
+
+In order to efficiently and easily administer FindFace Multi, you must have extensive knowledge and skills with Docker. If you’re new to Docker, get started with the commands below. Then explore the Docker documentation for additional skills.
+
+View all Docker containers, including the stopped ones:
+
+docker ps -a
+
+To get a more compact and understandable output, execute:
+
+docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.State}}"
+
+To extend the previous output, execute:
+
+docker ps --format='{{json .}}' | jq
+
+Restart the Docker service:
+
+sudo systemctl restart docker
+
+View a container log if the journald logging driver is enabled:
+
+journalctl CONTAINER_NAME=findface-multi-findface-multi-legacy-1 -f
+
+Stop a Docker container:
+
+sudo docker container stop <container_name>/<container_id>
+
+Stop all Docker containers:
+
+sudo docker container stop $(sudo docker ps -a -q)
+
+Start a Docker container:
+
+sudo docker container start <container_name>/<container_id>
+
+Start all Docker containers:
+
+sudo docker container start $(sudo docker ps -a -q)
+
+The FindFace Multi docker-compose.yaml file can be viewed as such:
+
+cat /opt/findface-multi/docker-compose.yaml
+
+FindFace Multi configuration files can be found here:
+
+cd /opt/findface-multi/configs/
+
+Once you made changes to a configuration file, restart a relevant container by executing:
+
+sudo docker container restart <container_name>/<container_id>
+
+Enter a running Docker container to execute a command in it:
+
+sudo docker container exec -it <container_name> /bin/bash
+
+Stop and remove all FindFace Multi containers:
+
+cd /opt/findface-multi
+sudo docker-compose down
+
+Build, recreate, and start FindFace Multi containers:
+
+cd /opt/findface-multi
+sudo docker-compose up -d
+
+          

@@ -1,0 +1,72 @@
+
+
+# Getting started
+
+In this chapter, you can find a recommended sequence of steps that will help you harness your system’s complete functionality.
+
+In this chapter:
+
+Gear Up for Work
+
+Organize Watch Lists and Card Index
+
+Upload and Process Video File
+
+Data Sources
+
+FindFace Multi in Action
+
+Tip
+
+<findface-ip:port> must be substituted into your ip address for FindFace Multi.
+<token> must be substituted into your token.
+
+## Gear Up for Work
+
+Perform the primary configuration of your system:
+
+Deploy FindFace Multi and learn API documentation at http://<findface-ip:port>/api-docs.
+
+Authorize with HTTP Basic auth by sending credentials to the login form.
+
+Create an authorization token with your session UUID and optionally face authorization.
+
+Paste a token into the API Key field in the authorization form: Token <token> or put it into the Authorization HTTP header.
+
+## Organize Watch Lists and Card Index
+
+Create a new watch list, using POST method, or use the default one.
+
+Find watch list ID to make a POST request for creating a new card.
+
+Perform face (car, body) detection on the attached photo and copy id of the necessary object.
+
+Attach an image of the individual’s face, using detection id.
+
+## Upload and Process Video File
+
+Organize Video Surveillance by uploading a video file.
+
+Find id of the video archive by listing video archives  or adding new one.
+
+Attach source video file with id of the video archive.
+
+Start video archive processing.
+
+## Data Sources
+
+To configure video-based object monitoring, add cameras to FindFace Multi, grouping them subject to their location.
+
+A default preconfigured camera group is available in the system. List available camera group.
+
+If necessary, create a new camera group.
+
+Use camera group id to make a POST request for creating a new camera.
+
+## FindFace Multi in Action
+
+Search for objects in the database of detected objects and card index. Learn more.
+
+Compare two objects and verify that they match.
+
+          

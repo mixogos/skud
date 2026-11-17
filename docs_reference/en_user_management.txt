@@ -1,0 +1,156 @@
+
+
+# Role and User Management
+
+In this chapter:
+
+Predefined Roles
+
+Create Custom Role in UI
+
+Primary and Additional User Privileges
+
+Create User Account Manually
+
+Create Default User with Administrator Rights
+
+Integrate with Active Directory for Auto User Creation
+
+Generate Keytab File
+
+Configure Volumes for Kerberos and Keytab File
+
+Configure NGINX on FindFace Multi Server to Support Active Directory
+
+Finalize FindFace Multi Configuration
+
+Manage FindFace Multi Users via Active Directory
+
+Deactivate or Delete Users
+
+## Predefined Roles
+
+FindFace Multi provides the following predefined roles:
+
+Administrator is granted full access to the FindFace Multi functionality, integrative and administrative tools.
+
+Important
+
+Whatever the role, the first administrator (Super Administrator) cannot be deprived of its rights.
+
+Operator is granted full access to the FindFace Multi functionality.
+
+User is granted rights to modify their profile and work with events and episodes. The other functions are available read-only.
+
+You can change the predefined roles privileges, as well as create various custom roles.
+
+## Create Custom Role in UI
+
+To create a custom role in the web interface, do the following:
+
+Navigate Settings -> Roles.
+
+Click + Add new role.
+
+[img:role_create_en]
+
+On the Information tab, specify the role name. Save the role.
+
+[img:role_information_en]
+
+After saving the role, you will see the following tabs appear next to the Information tab:
+
+[img:role_cameragroups_en]
+
+Watch Lists: role privileges for specific watch lists
+
+Camera Groups: role privileges for specific camera groups
+
+Permissions: role privileges for entire system functions and entities
+
+Set role privileges, subject to your needs. Note that there is a distinction between role privileges for a specific watch list/camera group and a system entity with the name watchlist/cameragroup. For example, if you set Off for a certain camera group on the Camera Groups tab, users with this role won’t be able to work with this very group of cameras. Unchecking all checkboxes for the cameragroup entity on the Permissions tab will prevent users from viewing and working with all camera groups.
+
+The full list of the FindFace Multi entities which are used in the current version is as follows:
+
+all_own_sessions: all sessions of the current user on different devices
+
+Note
+
+If relevant permissions for this entity are set, users will be able to view (view) and close (delete) all their sessions on different devices. Otherwise, users will be only allowed to view and close their session on the current device. Working with sessions takes place on the Sessions tab (Settings).
+
+alertrule: alert manager
+
+bodycluster: cluster of bodies
+
+bodyevent: body recognition event
+
+bodyobject: full-length photo in a record
+
+camera: camera
+
+cameragroup: camera group
+
+carcard: vehicle record
+
+carcluster: cluster of vehicles
+
+carepisode: vehicle-related episode
+
+carevent: vehicle recognition event
+
+carobject: vehicle photo in a record
+
+counter: counters
+
+externalvms: view, change, add, delete an external VMS
+
+externalvmsevent: view messages, received from an external VMS
+
+externalvmssendeventstatus: view messages, sent to an external VMS
+
+deviceblacklistrecord: blocklist
+
+facecluster: cluster of faces
+
+faceevent: face recognition event
+
+faceobject: face photo in a record
+
+humancard: record of an individual
+
+humanepisode: person-related episode
+
+metadictionary: permission to create metadictionaries and their values; metadictionaries can be used in custom metafields of a record
+
+notification: a sound notification for unacknowledged events
+
+report: report
+
+upload: item (photo) in batch photo upload
+
+uploadlist: list of photos in batch upload
+
+user: user
+
+videoarchive: object identification in video files
+
+watchlist: watch list
+
+webhook: webhook
+
+group: roles
+
+lines: line crossing
+
+You can also enable and disable rights for the following functionality:
+
+batchupload_cards: bulk record upload
+
+change_runtimesetting: changing the FindFace Multi general settings
+
+view_auditlog: viewing and working with the audit logs
+
+configure_ntls: configuration of the findface-ntls license server
+
+Save the changes.
+

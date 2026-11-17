@@ -1,0 +1,262 @@
+
+
+# Migrate Feature Vectors to a Different Neural Network Model
+
+Tip
+
+Do not hesitate to contact our experts on migration by support@ntechlab.com.
+
+Important
+
+In case, you are doing migration as part of the system update to a newer version, complete the update first. Only after that can you proceed to the migration.
+
+This section is about how to migrate object feature vectors to another neural network model.
+
+Do the following:
+
+Create a backup of the Tarantool-based feature vector database in any directory of your choice, for example, /etc/ffmulti_dump.
+
+sudo docker exec -it findface-multi-findface-sf-api-1 bash -c "mkdir ffmulti_dump; cd ffmulti_dump && /storage-api-dump -config /etc/findface-sf-api.ini"
+sudo docker cp findface-multi-findface-sf-api-1:/ffmulti_dump /etc
+
+Create new shards that will host regenerated feature vectors.
+
+Navigate to the /opt/findface-multi/data/findface-tarantool-server directory and find out the number of shards by counting the number of directories.
+
+Note
+
+There are eight shards in the example below.
+
+cd /opt/findface-multi/data/findface-tarantool-server
+
+ls -l
+
+shard-001
+shard-002
+shard-003
+shard-004
+shard-005
+shard-006
+shard-007
+shard-008
+
+Create directories that will host files of the new shards.
+
+sudo mkdir -p shard-01{1..8}/{index,snapshots,xlogs}
+
+Open the /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml configuration file and replace the extraction models with the new ones in the body_emben, car_emben, and face_emben parameters, depending on the object types you want to migrate.
+
+sudo vi /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml
+
+extractors:
+  ...
+  models:
+    ...
+     body_emben: pedrec/<new_model_body>.cpu<gpu>.fnk
+     ...
+     car_emben: carrec/<new_model_car>.cpu<gpu>.fnk
+     ...
+     face_emben: face/<new_model_face>.cpu<gpu>.fnk
+     ...
+
+Restart the findface-multi-findface-extraction-api-1 container.
+
+cd /opt/findface-multi/
+sudo docker-compose restart findface-extraction-api
+
+In the docker-compose.yaml file, create a new service for each new shard. To do that, copy the existing service and replace the name of the shard, ports in CFG_LISTEN_PORT, TT_LISTEN and the path to the shard in volumes section.
+
+sudo vi docker-compose.yaml
+
+services:
+  ...
+  findface-tarantool-server-shard-**011**:
+    depends_on: [findface-ntls]
+    environment: {CFG_EXTRA_LUA: loadfile("/tnt_schema.lua")(), CFG_LISTEN_HOST: 127.0.0.1,
+      CFG_LISTEN_PORT: '8111', CFG_NTLS: '127.0.0.1:3133', TT_CHECKPOINT_COUNT: 3,
+      TT_CHECKPOINT_INTERVAL: '14400', TT_FORCE_RECOVERY: 'true', TT_LISTEN: '127.0.0.1:32011',
+      TT_MEMTX_DIR: snapshots, TT_MEMTX_MEMORY: '2147483648', TT_WAL_DIR: xlogs, TT_WORK_DIR: /var/lib/tarantool/FindFace}
+    image: docker.int.ntl/ntech/universe/tntapi:ffserver-11.240325
+    logging: {driver: journald}
+    network_mode: service:pause
+    restart: always
+    volumes: ['./data/findface-tarantool-server/shard-**011**:/var/lib/tarantool/FindFace',
+      './configs/findface-tarantool-server/tnt-schema.lua:/tnt_schema.lua:ro']
+...
+
+Start the new shards by upping the containers.
+
+sudo docker-compose up -d
+
+Create a configuration file with migration settings migration.yaml based on the example below.
+
+sudo vi migration.yaml
+
+extraction-api:
+  timeouts:
+    connect: 5s
+    response_header: 30s
+    overall: 35s
+    idle_connection: 0s
+  extraction-api: http://127.0.0.1:18666
+storage-api-from: # current location of the gallery
+  timeouts:
+    connect: 5s
+    response_header: 30s
+    overall: 35s
+    idle_connection: 10s
+  max-idle-conns-per-host: 20
+  shards:
+    - master: http://127.0.0.1:8101/v2/
+      slave: ''
+    - master: http://127.0.0.1:8102/v2/
+      slave: ''
+    - master: http://127.0.0.1:8103/v2/
+      slave: ''
+    - master: http://127.0.0.1:8104/v2/
+      slave: ''
+    - master: http://127.0.0.1:8105/v2/
+      slave: ''
+    - master: http://127.0.0.1:8106/v2/
+      slave: ''
+    - master: http://127.0.0.1:8107/v2/
+      slave: ''
+    - master: http://127.0.0.1:8108/v2/
+      slave: ''
+storage-api-to:
+  timeouts:
+    connect: 5s
+    response_header: 30s
+    overall: 35s
+    idle_connection: 10s
+  max-idle-conns-per-host: 20
+  shards:
+    - master: http://127.0.0.1:8111/v2/
+      slave: ''
+    - master: http://127.0.0.1:8112/v2/
+      slave: ''
+    - master: http://127.0.0.1:8113/v2/
+      slave: ''
+    - master: http://127.0.0.1:8114/v2/
+      slave: ''
+    - master: http://127.0.0.1:8115/v2/
+      slave: ''
+    - master: http://127.0.0.1:8116/v2/
+      slave: ''
+    - master: http://127.0.0.1:8117/v2/
+      slave: ''
+    - master: http://127.0.0.1:8118/v2/
+      slave: ''
+workers_num: 3
+objects_limit: 1000
+extraction_batch_size: 8
+normalized_storage:
+  type: webdav
+  enabled: True
+  webdav:
+    upload-url: http://127.0.0.1:3333/uploads/
+  s3:
+    endpoint: ''
+    bucket-name: ''
+    access-key: ''
+    secret-access-key: ''
+    secure: False
+    region: ''
+    public-url: ''
+    operation-timeout: 30
+
+In the storage-api-from section, specify the old shards to migrate the data from.
+
+storage-api-from: # current location of the gallery
+  ...
+  shards:
+    - master: http://127.0.0.1:8101/v2/
+      slave: ''
+    - master: http://127.0.0.1:8102/v2/
+      slave: ''
+    - master: http://127.0.0.1:8103/v2/
+      slave: ''
+    - master: http://127.0.0.1:8104/v2/
+      slave: ''
+    - master: http://127.0.0.1:8105/v2/
+      slave: ''
+    - master: http://127.0.0.1:8106/v2/
+      slave: ''
+    - master: http://127.0.0.1:8107/v2/
+      slave: ''
+    - master: http://127.0.0.1:8108/v2/
+      slave: ''
+    ...
+
+In the storage-api-to section, specify the new shards that will host migrated data.
+
+storage-api-to:
+  ...
+  shards:
+    - master: http://127.0.0.1:8111/v2/
+      slave: ''
+    - master: http://127.0.0.1:8112/v2/
+      slave: ''
+    - master: http://127.0.0.1:8113/v2/
+      slave: ''
+    - master: http://127.0.0.1:8114/v2/
+      slave: ''
+    - master: http://127.0.0.1:8115/v2/
+      slave: ''
+    - master: http://127.0.0.1:8116/v2/
+      slave: ''
+    - master: http://127.0.0.1:8117/v2/
+      slave: ''
+    - master: http://127.0.0.1:8118/v2/
+      slave: ''
+    ...
+
+Copy the migration.yaml file into the findface-multi-findface-sf-api-1 container. Launch the sf-api-migrate utility with the -config option and provide the migration.yaml configuration file.
+
+sudo docker cp migration.yaml findface-multi-findface-sf-api-1:/
+sudo docker exec findface-multi-findface-sf-api-1 ./sf-api-migrate -config migration.yaml
+
+Note
+
+The migration process can take up a significant amount of time if there are many events and records in the system.
+
+Open the /opt/findface-multi/configs/findface-sf-api/findface-sf-api.yaml configuration file and adjust the shards ports, subject to the new shards settings. Restart the findface-multi-findface-sf-api-1 container.
+
+sudo vi /opt/findface-multi/configs/findface-sf-api/findface-sf-api.yaml
+
+storage-api:
+  shards:
+  - master: http://127.0.0.1:8111/v2/
+    slave: ''
+  - master: http://127.0.0.1:8112/v2/
+    slave: ''
+  - master: http://127.0.0.1:8113/v2/
+    slave: ''
+  - master: http://127.0.0.1:8114/v2/
+    slave: ''
+  - master: http://127.0.0.1:8115/v2/
+    slave: ''
+  - master: http://127.0.0.1:8116/v2/
+    slave: ''
+  - master: http://127.0.0.1:8117/v2/
+    slave: ''
+  - master: http://127.0.0.1:8118/v2/
+    slave: ''
+
+sudo docker-compose restart findface-sf-api
+
+After the migration is complete, remove services for the old shards from the docker-compose.yaml file and stop their containers.
+
+sudo docker-compose up -d --remove-orphans
+
+Migrate clusters as well if this functionality is enabled in your system. To do so, execute the following command:
+
+Note
+
+List the object types to migrate as the command options: --face, --body, --car.
+
+sudo docker exec -it findface-multi-findface-multi-legacy-1 /opt/findface-security/bin/python3 /tigre_prototype/manage.py migrate_clusters --face --body --car --use-best-event --use-thumbnail --force-clustering
+
+As a result, the system will regenerate feature vectors for the existing cluster events and automatically launch the scheduled clustering to rebuild clusters.
+
+          

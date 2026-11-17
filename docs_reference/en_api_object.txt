@@ -1,0 +1,217 @@
+
+
+# Objects
+
+## Add face object
+
+POST /objects/faces/
+
+This method creates new Face object that contains source photo, thumbnail, and other attributes.
+
+Tip
+
+For car or body objects instead faces use cars or body.
+
+The REQUEST BODY is required and contains multipart/form-data with the following parameters:
+
+Name
+
+Schema
+
+Description
+
+create_from
+
+string
+
+This field can contain one of the following references:
+
+detection:<detection id>: use a Detection object (obtained with the POST /detect) to select a object on source_photo. (source_photo must contain the same image that was used for POST /detect).
+
+{face, body, or car}event:<event id>: create new Object from an Event (source_photo must be empty).
+
+{face, body, or car}object:<object id>: use another Object as a template for this object (source_photo must be empty).
+
+detect_id
+
+string
+
+Auxiliary parameter.
+
+mf_selector
+
+enum
+
+This parameter defines the FindFace Multi default behaviour when there are multiple objects are present in source_photo, and create_from is not set. Default: reject. Allowed:
+
+reject – Reject source_photo with multiple objects.
+
+biggest – Select the biggest object in source_photo.
+
+upload_list
+
+integer
+
+Add object to this upload list.
+
+source_photo
+
+binary
+
+Source photo (required when create_from points to a Detection or empty).
+
+frame_coords_left
+
+integer
+
+Left border of object’s bounding box.
+
+frame_coords_top
+
+integer
+
+Top border of object’s bounding box.
+
+frame_coords_right
+
+integer
+
+Right border of object’s bounding box.
+
+frame_coords_bottom
+
+integer
+
+Bottom border of object’s bounding box.
+
+active
+
+boolean
+
+true if object is enabled. Default: true.
+
+card
+
+integer
+
+Related card ID.
+
+Attach the photofile to the source_photo, point out the related card id and paste detection:<detection id> into create_from, where detection id you have got from detection objects on a photo. source_photo must contain the same image that was used for POST /detect.
+
+[img:api_add_object_create_from_en]
+
+[img:api_add_object_create_source_photo_en]
+
+[img:api_add_object_card_id_en]
+
+CURL example
+
+curl -X POST "http://<findface-ip:port>/objects/faces/" \
+  -H "Accept: application/json" \
+  -H "Content-Language: ru" \
+  -H "Accept-Language: ru" \
+  -H "Authorization: Token <token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "create_from=detection:cf2g86uv54rqhngnq960" \
+  -F "source_photo=@Смит_01.png" \
+  -F "card=3" \
+
+If the response is successful (Created: 201), it returns an object that contains the following parameters. Example.
+
+Name
+
+Schema
+
+Description
+
+id*
+
+string 🆁
+
+ID.
+
+created_date*
+
+date-time 🆁
+
+Object creation date.
+
+modified_date*
+
+date-time 🆁
+
+Object modification date.
+
+source_photo_name*
+
+string 🆁
+
+Filename supplied for source_photo on object creation.
+
+frame_coords_left
+
+integer
+
+Left border of object’s bounding box.
+
+frame_coords_top
+
+integer
+
+Top border of object’s bounding box.
+
+frame_coords_right
+
+integer
+
+Right border of object’s bounding box.
+
+frame_coords_bottom
+
+integer
+
+Bottom border of object’s bounding box.
+
+thumbnail*
+
+uri 🆁
+
+Object thumbnail.
+
+active
+
+boolean
+
+Default: true. true if object is enabled.
+
+features*
+
+<any-key>: str┃int┃float┃bool┃object┃array┃null
+
+Features.
+
+card*
+
+integer
+
+Related card ID.
+
+Response example
+
+{
+ "card": 3,
+ "created_date": "2023-01-16T08:12:55+00:00",
+ "modified_date": "1970-01-01T00:00:00+00:00",
+ "source_photo_name": "Смит_01.png",
+ "source_photo": "http://172.23.218.94/uploads/cards/7w/3/face_%D0%A1%D0%BC%D0%B8%D1%82_01_ftgY5K.png",
+ "thumbnail": "http://172.23.218.94/uploads/cards/TD/3/face_%D0%A1%D0%BC%D0%B8%D1%82_01_thumbnail_VyVsIj.png",
+ "frame_coords_left": 757,
+ "frame_coords_top": 79,
+ "frame_coords_right": 948,
+ "frame_coords_bottom": 353,
+ "active": true,
+ "features": {},
+ "id": "4493225067924944019",
+ "meta": {}
+}
+

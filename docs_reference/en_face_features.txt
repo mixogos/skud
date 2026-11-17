@@ -1,0 +1,540 @@
+
+
+# Enable Face and Face Attribute Recognition
+
+FindFace Multi allows you to recognize human faces and face attributes. Subject to your needs, you can enable recognition of such face attributes as age, gender, emotions, beard, glasses, medical masks, head position, eyes state, or liveness.
+
+Face and face attribute recognition can be automatically enabled and configured during the FindFace Multi installation. If you skipped this step, you can manually do it later. Face and face attribute recognition works on both GPU- and CPU-acceleration.
+
+Face object recognition is enabled by default. In case you removed face as a recognition object during the installation, you can add it later by following the below steps. If face object recognition is already installed, and you only need to enable face attribute recognition, jump to the steps 1.5, 4.1, 4.2. Other steps should be skipped.
+
+To enable face recognition, do the following:
+
+Specify neural network models for face object detection in the /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml configuration file.
+
+Important
+
+Be sure to choose the right acceleration type for each model, matching the acceleration type of findface-extraction-api: CPU or GPU. Be aware that findface-extraction-api on CPU can work only with CPU-models, while findface-extraction-api on GPU supports both CPU- and GPU-models.
+
+Open the findface-extraction-api.yaml configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml
+
+Specify the face detector model in the detectors → models section by pasting the following code:
+
+GPU
+
+detectors:
+  ...
+  models:
+    face_jasmine:
+      aliases:
+      - face
+      - nnd
+      - cheetah
+      model: detector/facedet.kali.005.gpu.fnk
+      options:
+        min_object_size: 32
+        resolutions:
+        - 2048x2048
+  ...
+
+CPU
+
+detectors:
+  ...
+  models:
+    face_jasmine:
+      aliases:
+      - face
+      - nnd
+      - cheetah
+      model: detector/facedet.jasmine_fast.004.cpu.fnk
+      options:
+        min_object_size: 32
+        resolutions:
+        - 2048x2048
+  ...
+
+Make sure that the objects → face section contains the quality_attribute: face_quality and the  base_normalizer: facenorm/crop2x.v2_maxsize400.gpu.fnk or the base_normalizer: facenorm/crop2x.v2_maxsize400.cpu.fnk, depending on your acceleration type:
+
+GPU
+
+objects:
+  ...
+  face:
+    base_normalizer: facenorm/crop2x.v2_maxsize400.gpu.fnk
+    quality_attribute: face_quality
+  ...
+
+CPU
+
+objects:
+  ...
+  face:
+    base_normalizer: facenorm/crop2x.v2_maxsize400.cpu.fnk
+    quality_attribute: face_quality
+  ...
+
+Specify the face normalizer models in the normalizers section by pasting the following code:
+
+GPU
+
+normalizers:
+  ...
+  models:
+    crop1x:
+      model: facenorm/crop1x.v2_maxsize400.gpu.fnk
+    crop2x:
+      model: facenorm/crop2x.v2_maxsize400.gpu.fnk
+    cropbbox:
+      model: facenorm/cropbbox.v2.gpu.fnk
+    multicrop_full_center:
+      model: ''
+    multicrop_full_crop2x:
+      model: facenorm/facenorm.multicrop_full_crop2x_size400.gpu.fnk
+    norm200:
+      model: facenorm/bee.v3.gpu.fnk
+  ...
+
+CPU
+
+normalizers:
+  ...
+  models:
+    crop1x:
+      model: facenorm/crop1x.v2_maxsize400.cpu.fnk
+    crop2x:
+      model: facenorm/crop2x.v2_maxsize400.cpu.fnk
+    cropbbox:
+      model: facenorm/cropbbox.v2.cpu.fnk
+    multicrop_full_center:
+      model: ''
+    multicrop_full_crop2x:
+      model: facenorm/facenorm.multicrop_full_crop2x_size400.cpu.fnk
+    norm200:
+      model: facenorm/bee.v3.cpu.fnk
+  ...
+
+Note
+
+This step is required to enable face attribute recognition.
+
+To enable face attribute recognition, do the following:
+
+In the /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml configuration file, specify the extraction models in the extractors section, as shown in the example below. Be sure to indicate the right acceleration type for each model, matching the acceleration type of findface-extraction-api: CPU or GPU.
+
+GPU
+
+extractors:
+  ...
+  models:
+    face_age:
+      default:
+        model: faceattr/faceattr.age.v3.gpu.fnk
+    face_beard:
+      default:
+        model: faceattr/beard.v0.gpu.fnk
+    face_beard4:
+      default:
+        model: ''
+    face_countries47:
+      default:
+        model: ''
+    face_emben:
+      default:
+        model: face/nectarine_l_320.gpu.fnk
+    face_emotions:
+      default:
+        model: faceattr/emotions.v1.gpu.fnk
+    face_eyes_attrs:
+      default:
+        model: faceattr/faceattr.eyes_attrs.v0.gpu.fnk
+    face_eyes_openness:
+      default:
+        model: ''
+    face_gender:
+      default:
+        model: faceattr/faceattr.gender.v3.gpu.fnk
+    face_glasses3:
+      default:
+        model: ''
+    face_glasses4:
+      default:
+        model: faceattr/faceattr.glasses4.v0.gpu.fnk
+    face_hair:
+      default:
+        model: ''
+    face_headpose:
+      default:
+        model: faceattr/headpose.v3.gpu.fnk
+    face_headwear:
+      default:
+        model: ''
+    face_highlight:
+      default:
+        model: ''
+    face_liveness:
+      default:
+        model: faceattr/faceattr.liveness_web.v1.gpu.fnk
+    face_luminance_overexposure:
+      default:
+        model: ''
+    face_luminance_underexposure:
+      default:
+        model: ''
+    face_luminance_uniformity:
+      default:
+        model: ''
+    face_medmask3:
+      default:
+        model: faceattr/medmask3.v2.gpu.fnk
+    face_medmask4:
+      default:
+        model: ''
+    face_mouth_attrs:
+      default:
+        model: ''
+    face_quality:
+      default:
+        model: faceattr/faceattr.quality.v5.gpu.fnk
+    face_scar:
+      default:
+        model: ''
+    face_sharpness:
+      default:
+        model: ''
+    face_tattoo:
+      default:
+        model: ''
+    face_validity:
+      default:
+        model: ''
+
+CPU
+
+extractors:
+  ...
+  models:
+    face_age:
+      default:
+        model: faceattr/faceattr.age.v3.cpu.fnk
+    face_beard:
+      default:
+        model: faceattr/beard.v0.cpu.fnk
+    face_beard4:
+      default:
+        model: ''
+    face_countries47:
+      default:
+        model: ''
+    face_emben:
+      default:
+        model: face/nectarine_l_320.cpu.fnk
+    face_emotions:
+      default:
+        model: faceattr/emotions.v1.cpu.fnk
+    face_eyes_attrs:
+      default:
+        model: faceattr/faceattr.eyes_attrs.v0.cpu.fnk
+    face_eyes_openness:
+      default:
+        model: ''
+    face_gender:
+      default:
+        model: faceattr/faceattr.gender.v3.cpu.fnk
+    face_glasses3:
+      default:
+        model: ''
+    face_glasses4:
+      default:
+        model: faceattr/faceattr.glasses4.v0.cpu.fnk
+    face_hair:
+      default:
+        model: ''
+    face_headpose:
+      default:
+        model: faceattr/headpose.v3.cpu.fnk
+    face_headwear:
+      default:
+        model: ''
+    face_highlight:
+      default:
+        model: ''
+    face_liveness:
+      default:
+        model: faceattr/faceattr.liveness_web.v1.cpu.fnk
+    face_luminance_overexposure:
+      default:
+        model: ''
+    face_luminance_underexposure:
+      default:
+        model: ''
+    face_luminance_uniformity:
+      default:
+        model: ''
+    face_medmask3:
+      default:
+        model: faceattr/medmask3.v2.cpu.fnk
+    face_medmask4:
+      default:
+        model: ''
+    face_mouth_attrs:
+      default:
+        model: ''
+    face_quality:
+      default:
+        model: faceattr/faceattr.quality.v5.cpu.fnk
+    face_scar:
+      default:
+        model: ''
+    face_sharpness:
+      default:
+        model: ''
+    face_tattoo:
+      default:
+        model: ''
+    face_validity:
+      default:
+        model: ''
+
+The following extraction models are available:
+
+Extractor
+
+Acceleration
+
+Configure as follows
+
+age
+
+CPU
+
+face_age: faceattr/faceattr.age.v3.cpu.fnk
+
+GPU
+
+face_age: faceattr/faceattr.age.v3.gpu.fnk
+
+beard
+
+CPU
+
+face_beard: faceattr/beard.v0.cpu.fnk
+
+GPU
+
+face_beard: faceattr/beard.v0.gpu.fnk
+
+individual face
+feature vector
+
+CPU
+
+face_emben: face/nectarine_l_320.cpu.fnk
+
+GPU
+
+face_emben: face/nectarine_l_320.gpu.fnk
+
+gender
+
+CPU
+
+face_gender: faceattr/faceattr.gender.v3.cpu.fnk
+
+GPU
+
+face_gender: faceattr/faceattr.gender.v3.gpu.fnk
+
+emotions
+
+CPU
+
+face_emotions: faceattr/emotions.v1.cpu.fnk
+
+GPU
+
+face_emotions: faceattr/emotions.v1.gpu.fnk
+
+glasses
+
+CPU
+
+face_glasses3: faceattr/faceattr.glasses4.v0.cpu.fnk
+
+GPU
+
+face_glasses3: faceattr/faceattr.glasses4.v0.gpu.fnk
+
+head position
+
+CPU
+
+face_headpose: faceattr/headpose.v3.cpu.fnk
+
+GPU
+
+face_headpose: faceattr/headpose.v3.gpu.fnk
+
+face liveness
+
+CPU
+
+face_liveness: faceattr/faceattr.liveness_web.v1.cpu.fnk
+
+GPU
+
+face_liveness: faceattr/faceattr.liveness_web.v1.gpu.fnk
+
+face mask
+
+CPU
+
+face_medmask3: faceattr/medmask3.v2.cpu.fnk
+
+GPU
+
+face_medmask3: faceattr/medmask3.v2.gpu.fnk
+
+face quality
+
+CPU
+
+face_quality: faceattr/faceattr.quality.v5.cpu.fnk
+
+GPU
+
+face_quality: faceattr/faceattr.quality.v5.gpu.fnk
+
+eyes
+
+CPU
+
+face_eyes_attrs: faceattr/faceattr.eyes_attrs.v0.cpu.fnk
+
+GPU
+
+face_eyes_attrs: faceattr/faceattr.eyes_attrs.v0.gpu.fnk
+
+Important
+
+The face_liveness extraction model faceattr/faceattr.liveness_web.v1 is enabled by default. Do not disable it if you use authentication by face.
+
+To enable face recognition, modify the /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration file.
+
+In the models section, specify the face neural network models by analogy with the example below:
+
+GPU
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+models:
+  ...
+  detectors:
+    ...
+    face:
+      fnk_path: /usr/share/findface-data/models/detector/facedet.kali.005.gpu.fnk
+      min_size: 60
+    ...
+  normalizers:
+    ...
+    face_norm:
+      fnk_path: /usr/share/findface-data/models/facenorm/crop2x.v2_maxsize400.gpu.fnk
+    face_norm_quality:
+      fnk_path: /usr/share/findface-data/models/facenorm/crop1x.v2_maxsize400.gpu.fnk
+    ...
+  extractors:
+    ...
+    face_quality:
+      fnk_path: /usr/share/findface-data/models/faceattr/faceattr.quality.v5.gpu.fnk
+      normalizer: face_norm_quality
+
+CPU
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+models:
+  ...
+  detectors:
+    ...
+    face:
+      fnk_path: /usr/share/findface-data/models/detector/facedet.jasmine_fast.004.cpu.fnk
+      min_size: 60
+    ...
+  normalizers:
+    ...
+    face_norm:
+      fnk_path: /usr/share/findface-data/models/facenorm/crop2x.v2_maxsize400.cpu.fnk
+    face_norm_quality:
+      fnk_path: /usr/share/findface-data/models/facenorm/crop1x.v2_maxsize400.cpu.fnk
+    ...
+  extractors:
+    ...
+    face_quality:
+      fnk_path: /usr/share/findface-data/models/faceattr/faceattr.quality.v5.cpu.fnk
+      normalizer: face_norm_quality
+
+Make sure that the objects → face section is included:
+
+objects:
+  ...
+  face:
+    normalizer: face_norm
+    quality: face_quality
+    track_features: ''
+
+To enable face recognition, open the /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml configuration file and make sure it contains the face section in detectors that looks similar to the example below.
+
+sudo vi /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml
+
+detectors:
+  face:
+    filter_min_quality: 0.42
+    filter_min_size: 60
+    filter_max_size: 8192
+    roi: ''
+    fullframe_crop_rot: false
+    fullframe_use_png: false
+    jpeg_quality: 95
+    overall_only: true
+    realtime_post_first_immediately: false
+    realtime_post_interval: 1
+    realtime_post_every_interval: false
+    track_interpolate_bboxes: true
+    track_miss_interval: 1
+    track_overlap_threshold: 0.25
+    track_max_duration_frames: 0
+    track_send_history: false
+    post_best_track_frame: true
+    post_best_track_normalize: true
+    post_first_track_frame: false
+    post_last_track_frame: false
+    tracker_type: simple_iou
+    track_deep_sort_matching_threshold: 0.65
+    track_deep_sort_filter_unconfirmed_tracks: true
+    track_object_is_principal: false
+    track_history_active_track_miss_interval: 0
+    filter_track_min_duration_frames: 1
+    extractors_track_triggers: {}
+
+Note
+
+This step is required to enable face attribute recognition.
+
+Enable recognition of face attributes in the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+In the FFSECURITY section, specify the face attributes that you want to display for the face recognition events.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+available features: age, beard, emotions, gender, glasses, headpose, medmask, eyes_attrs
+'FACE_EVENTS_FEATURES': ['gender', 'beard', 'emotions', 'headpose', 'age', 'medmask', 'glasses', 'eyes_attrs'],
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+          

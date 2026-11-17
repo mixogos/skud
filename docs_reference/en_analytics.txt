@@ -1,0 +1,37 @@
+
+
+# Audience analysis
+
+FindFace Multi includes statistics on the number of visitors, their gender, average age, most frequently visited zones (judged by most active cameras), and the character of visits (first-timers or returners).
+
+The analytical data charts are available on the Audience analysis tab.
+
+Important
+
+The analytics are built only when the face clustering is enabled.
+
+[img:analytics_en]
+
+To work with the analytical data, use the following filters:
+
+Date and time
+
+Scale interval
+
+Minimum time between visits
+
+Number of returns
+
+Cameras
+
+Watch lists
+
+Age
+
+Gender
+
+See also
+
+Face, Body, Vehicle Clusters
+
+           

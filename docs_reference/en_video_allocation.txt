@@ -1,0 +1,75 @@
+
+
+# Allocate findface-video-worker to Camera Group
+
+In a distributed architecture, it is often necessary that video streams from a group of cameras be processed in situ, without being redistributed across remote findface-video-worker instances by the principal server.
+
+Note
+
+Among typical use cases are hotel chains, chain stores, several security checkpoints in the same building, etc.
+
+In this case, allocate the local findface-video-worker to the camera group.
+
+Do the following:
+
+Navigate to the Settings tab. Click Camera Groups.
+
+Open the camera group settings.
+
+In the Labels, create or select one or several allocation labels. Save changes.
+
+There are two ways to specify allocation labels:
+
+by findface-video-worker.yaml configuration file
+
+by docker-compose.yaml configuration file
+
+Note
+
+Use the same name of labels in findface-video-worker and in the web-interface, otherwise cameras will not process.
+
+Do the following:
+
+Open the /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration file and specify the allocation labels in the dictionary format (labels MyLabel1, MyLabel2 in the example below).
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+labels: {"MyLabel1": "true", "MyLabel2": "true"}
+
+Restart the findface-multi-findface-video-worker-1 container.
+
+sudo docker container restart findface-multi-findface-video-worker-1
+
+As an alternative way, you can use the configuration of docker-compose.yaml file:
+
+Open the /opt/findface-multi/docker-compose.yaml configuration file and specify the allocation labels in the findface-video-worker section by adding environment:
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+
+...
+  findface-video-worker:
+    command: [--config=/etc/findface-video-worker.yaml]
+    depends_on: [findface-video-manager, findface-ntls, mongodb]
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - CFG_LABELS=MyLabel1=true;MyLabel2=true
+    image: docker.int.ntl/ntech/universe/video-worker-cpu:ffserver-12.240830.2
+    logging: {driver: journald}
+    network_mode: service:pause
+   ...
+
+Rebuild all FindFace Multi containers.
+
+cd /opt/findface-multi
+sudo docker-compose down
+sudo docker-compose up -d
+
+Note
+
+If a camera is assigned an allocation label, its video stream can be processed by a findface-video-worker instance with the same label, as well as by all unlabeled findface-video-worker instances.
+
+Warning
+
+If a labeled camera is processed by an unlabeled findface-video-worker instance and a free similar-labeled instance appears, the camera won’t automatically switch to the latter. Restart the similar-labeled camera.
+
+          

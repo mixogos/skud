@@ -1,0 +1,27 @@
+
+
+# Installation of Neural Network Models
+
+To detect and recognize objects and object attributes, findface-extraction-api uses neural networks.
+
+If you want to manually initiate the installation of neural network models, use the console installer as follows:
+
+Execute the findface-* file.
+
+Note
+
+Be sure to specify the actual file name instead of findface-*.
+
+sudo ./findface-*.run
+
+Product to install: FindFace Multi
+
+Select the installation type: Fully customized installation.
+
+Select a FindFace component to install: findface-data. To do so, first, deselect all the listed components by entering -* in the command line, then select the required component by entering its sequence number (keyword). Enter done to save your selection and proceed to the next step.
+
+In the same manner, select models to install. After that, the installation process will automatically begin.
+
+You can find installed models for the object and object attribute recognition at /opt/findface-multi/models/. See Neural Networks Summary.
+
+          

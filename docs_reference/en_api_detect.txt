@@ -1,0 +1,139 @@
+
+
+# Detect objects on a photo
+
+To detect objects on a photo, use this method:
+
+POST /detect
+
+The REQUEST BODY is required and contains multipart/form-data with the following parameters.
+
+Name
+
+Schema
+
+Description
+
+photo
+
+binary
+
+Source image file.
+
+attributes
+
+object
+
+Attributes of face, car and body.
+
+attributes might be empty or contain the objects of face, car and body with the following parameters for each one:
+
+age: boolean
+
+beard: boolean
+
+emotions: boolean
+
+glasses: boolean
+
+gender: boolean
+
+medmask: boolean
+
+headpose: boolean
+
+Attach a source image file and send the POST request.
+
+CURL example
+
+curl -X POST "http://<findface-ip:port>/detect" \
+-H "Accept: application/json" \
+-H "Content-Language: ru" \
+-H "Accept-Language: ru" \
+-H "Authorization: Token <token>" \
+-H "Content-Type: multipart/form-data" \
+-F "photo=@Смит_01.png" \
+-F "attributes={
+ "face": {
+   "age": false,
+   "beard": false,
+   "emotions": false,
+   "glasses": false,
+   "gender": false,
+   "medmask": false,
+   "headpose": false
+ },
+ "car": {
+   "description": false,
+   "license_plate": false,
+   "special_vehicle_type": false,
+   "category": false,
+   "weight_type": false,
+   "orientation": false
+ },
+ "body": {
+   "color": false,
+   "clothes": false,
+   "bags": false,
+   "protective_equipment": false,
+   "age_gender": false
+ }
+}" \
+
+If the response is successful (OK: 200), it returns an object that contains the following parameters. Example.
+
+Name
+
+Schema
+
+Description
+
+orientation*
+
+integer
+
+EXIF orientation of the photo.
+
+objects
+
+<any-key>: str┃int┃float┃bool┃object┃array┃null
+
+Returned objects with requested attributes.
+
+Response example
+
+{
+ "orientation": 1,
+ "objects": {
+   "face": [
+     {
+       "id": "cf0mbqev54rqhngnq940",
+       "bbox": {
+         "left": 451,
+         "top": 235,
+         "right": 645,
+         "bottom": 502
+       },
+       "detection_score": 0.80645436,
+       "low_quality": false,
+       "features": {}
+     },
+     {
+       "id": "cf0mbqev54rqhngnq94g",
+       "bbox": {
+         "left": 757,
+         "top": 79,
+         "right": 948,
+         "bottom": 353
+       },
+       "detection_score": 0.90099674,
+       "low_quality": false,
+       "features": {}
+     }
+   ]
+ }
+}
+
+In the response you will get ID of the object and the coordinates of bbox of the object (face, car, body). Copy the value of id of the necessary object to use it for adding an object to the card or to search an object.
+
+          

@@ -1,0 +1,27 @@
+
+
+# Remove FindFace Multi Instance
+
+If your FindFace Multi instance is deployed as a standalone server in one run, use the uninstall.sh script integrated into the installer file to remove your instance.
+
+Important
+
+Make sure to back up your instance before uninstalling it if you plan to restore FindFace Multi and its data later on.
+
+Run the script:
+
+cd /opt/findface-multi/
+sudo /opt/findface-multi/uninstall.sh /opt/findface-multi/
+
+You will be asked a question:
+
+Q: This script will remove all docker containers, images, volumes, config files and directory "/opt/findface-multi/". Do you want to proceed(y/n)?:
+
+Answer y to remove the instance.
+
+In case your FindFace Multi deployment is not typical, and you are unable to use the automatic uninstaller script, remove all product components manually. The following command replicates the uninstall.sh script behavior and should be executed on every employed host:
+
+sudo docker-compose -f /opt/findface-multi/docker-compose.yaml down -v --rmi all
+sudo rm -rf /opt/findface-multi
+
+          

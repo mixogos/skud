@@ -1,0 +1,41 @@
+
+
+# Camera Groups
+
+Camera groups are entities that are used for video sources classification. After processing a video, the system will attribute the object recognition events obtained from the video to a designated camera group. It makes the further event handling and search a lot easier.
+
+To create a camera group, do the following:
+
+Navigate Settings → Camera groups.
+
+Click + Add new camera group.
+
+[img:create_camera_group_en]
+
+On the Information tab, specify the group name. Add a comment if needed.
+
+[img:camera_group_en]
+
+If you want to allocate a certain findface-video-worker instance to process video streams from the group, create or select one or several allocation labels.
+
+Note
+
+To complete the allocation, list the labels in the /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration file. See Allocate findface-video-worker to Camera Group for details.
+
+If you want to deduplicate events from cameras that belong to the same group, i.e. exclude coinciding events, select Deduplicate events with interval and specify the deduplication interval in seconds (interval between 2 consecutive checks for event uniqueness).
+
+Warning
+
+Use deduplication with extreme caution. If cameras within a group observe different scenes, some objects may be skipped. See Deduplicate Events for details.
+
+By default, video from all camera groups is processed using the generic confidence threshold. To set an individual threshold for the camera group, enable Confidence threshold and specify the threshold value.
+
+Save the changes.
+
+On the Permissions tab, assign privileges on the camera group, specifying which user roles are allowed to change/view the camera group settings.
+
+[img:camera_group_permissions_en]
+
+Click Save.
+
+Activate the camera group.

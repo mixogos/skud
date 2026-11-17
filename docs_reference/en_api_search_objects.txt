@@ -1,0 +1,37 @@
+
+
+# Search Faces in System
+
+FindFace Multi allows you to search for individuals throughout the entire system.
+
+You may specify a face to search for in one of the following ways:
+
+by uploading a photo
+
+by event ID
+
+by object ID
+
+by cluster ID
+
+To find an individual by uploading a photo, do the following:
+
+Upload a photo with the POST /detect method.
+
+Attach source image file and send the POST request.
+
+In the response you will get id of the object and the coordinates of bbox of the face.
+
+If there are multiple faces in the image, select the one of your interest. Copy the value of id of the necessary object to use it for search with GET /cards/humans/ method in the looks_like field in this way: detection:<detection id>.
+
+You may also use:
+
+event:<event id> (face, body, or car)
+
+object:<object id> (face, body or car)
+
+cluster:<cluster id>
+
+You will see the search results in response. Example. If necessary, you can narrow down your search by specifying a watch list, similarity threshold, etc.
+
+          

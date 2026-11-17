@@ -1,0 +1,194 @@
+
+
+# Debian 11 Server Preparation
+
+To prepare a server on Debian 11 for the FindFace Multi deployment, follow the instructions below minding the sequence.
+
+Note
+
+For other platforms, please refer to the following resources:
+
+NVIDIA drivers
+
+Docker Engine
+
+Docker Compose
+
+NVIDIA Container Toolkit
+
+In this section:
+
+Install FUSE
+
+GPU: Install NVIDIA Drivers
+
+Install Docker Products
+
+GPU: Install NVIDIA Container Runtime
+
+Important
+
+The FindFace Multi host must have a static IP address in order to be running successfully. If the host IP address is static, you do not need to take additional steps. Otherwise, follow this instruction.
+
+To make the IP address static, open the /etc/network/interfaces file and modify the current primary network interface entry as shown in the case study below. Be sure to substitute the suggested addresses with the actual ones, subject to your network specification.
+
+sudo vi /etc/network/interfaces
+
+iface eth0 inet static
+address 192.168.112.144
+netmask 255.255.255.0
+gateway 192.168.112.254
+dns-nameservers 192.168.112.254
+
+Restart networking.
+
+sudo service networking restart
+
+If you use the Netplan utility for network configuration, make changes to the *.yaml file located in the /etc/netplan/ directory.
+
+sudo vi /etc/netplan/*.yaml
+
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: no
+      addresses: [192.168.112.144/24]
+      gateway4: 192.168.112.254
+      nameservers:
+        addresses: [192.168.112.254]
+
+Apply changes with the command:
+
+sudo netplan apply
+
+Edit network configuration files only if you are sure of what you are doing.
+
+## Install FUSE
+
+Install FUSE (Filesystem in Userspace) by running the following command.
+
+sudo apt install fuse -y
+
+## GPU: Install NVIDIA Drivers
+
+The first step of the server preparation is the NVIDIA driver installation. It’s applicable only for the GPU configuration. Go straight to the Docker installation if your configuration is CPU-accelerated.
+
+With the GPU-accelerated FindFace Multi, you’ll need the NVIDIA driver version 550 or above. Download a relevant .run installer from NVIDIA Driver Downloads.
+
+Since you use a .run installer from NVIDIA, the following dependencies must be installed:
+
+sudo apt install linux-headers-$(uname -r)
+sudo apt install build-essential
+
+## Install Docker Products
+
+Docker products must be installed on both CPU and GPU servers. Do the following:
+
+Update the apt package index and install packages to allow apt to use a repository over HTTPS.
+
+sudo apt-get update
+sudo apt-get install ca-certificates curl gnupg
+
+Add the Docker’s official GPG key (GNU Privacy Guard key) to the host.
+
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+Set up the Docker repository.
+
+echo \
+"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+bullseye stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+Update the apt package index one more time.
+
+sudo apt-get update
+
+Install the latest versions of Docker products.
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+
+Note
+
+The most recent versions of docker-ce and docker-ce-cli that have been tested are 26.* versions. Use later versions of Docker packages, if any, at your own discretion.
+
+Check whether the Docker installation was a success.
+
+sudo docker run hello-world
+
+This command downloads a test image and runs it in a container. When the container runs, it prints a confirmation message and exits.
+
+Install docker-compose.
+
+sudo curl -SL https://github.com/docker/compose/releases/download/v2.15.1/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+Perform the Docker Engine post-installation procedures to ease your future work with Docker and FindFace Multi containers. Once you can manage Docker as a non-root user, you don’t have to apply sudo in the commands related to Docker.
+
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+
+Configure the Docker network.
+
+BIP=10.$((RANDOM % 256)).$((RANDOM % 256)).1
+sudo tee /etc/docker/daemon.json <<EOF
+{
+    "bip": "$BIP/24",
+    "fixed-cidr": "$BIP/24"
+}
+EOF
+
+## GPU: Install NVIDIA Container Runtime
+
+To deploy containerized GPU-accelerated FindFace Multi, you need NVIDIA Container Runtime. We recommend installing NVIDIA Container Toolkit that includes this runtime. Do the following:
+
+Specify the repository and install NVIDIA Container Toolkit from it by executing the following commands.
+
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+
+Configure the Docker network. Configure usage of the NVIDIA Container Runtime installed along with NVIDIA Container Toolkit.
+
+BIP=10.$((RANDOM % 256)).$((RANDOM % 256))
+sudo tee /etc/docker/daemon.json <<EOF
+{
+   "default-address-pools":
+        [
+                {"base":"$BIP.0/16","size":24}
+        ],
+    "bip": "$BIP.1/24",
+    "fixed-cidr": "$BIP.0/24",
+    "runtimes": {
+         "nvidia": {
+             "path": "nvidia-container-runtime",
+             "runtimeArgs": []
+         }
+    },
+    "default-runtime": "nvidia"
+}
+EOF
+
+Restart Docker.
+
+systemctl restart docker
+
+Now you are all set to install FindFace Multi. Refer to the following sections:
+
+FindFace Multi Standalone Automated Deployment
+
+FindFace Video Worker Deployment on Remote Hosts
+
+Fully Customized Installation
+
+          

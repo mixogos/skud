@@ -1,0 +1,91 @@
+
+
+# Neural Networks Summary
+
+Here you can find a summary of neural network models created by our Lab and used in FindFace Multi.
+
+You can find installed models at /opt/findface-multi/models/.
+
+Important
+
+The default face biometric model upon a clean installation is nectarine_l_320.
+
+Face, vehicle, and body detection
+
+ls /opt/findface-multi/models/detector/
+
+bodydet.gustav_accurate.022.cpu.fnk       bodydet_facedet.kali_normal.001.cpu.fnk
+bodydet.gustav_accurate.022.gpu.fnk       bodydet_facedet.kali_normal.001.gpu.fnk
+bodydet.gustav_normal.022.cpu.fnk         car.gustav_normal.007.cpu.fnk
+bodydet.gustav_normal.022.gpu.fnk         car.gustav_normal.007.gpu.fnk
+bodydet.gustav_normal_nomany.022.gpu.fnk  cardet.kali_accurate.008.cpu.fnk
+bodydet.kali.021.cpu.fnk                  cardet.kali_accurate.008.gpu.fnk
+bodydet.kali.021.gpu.fnk                  facedet.jasmine_fast.004.cpu.fnk
+bodydet_facedet.kali.001.cpu.fnk          facedet.kali.005.gpu.fnk
+bodydet_facedet.kali.001.gpu.fnk          headbodyface.alpha000_normal.001.gpu.fnk
+
+Face and body image normalization
+
+ls /opt/findface-multi/models/facenorm/
+
+bee.v3.cpu.fnk    crop1x.v2_maxsize400.cpu.fnk  crop2x.v2_no_maxsize.cpu.fnk  facenorm.multicrop_full_center_size400.cpu.fnk
+bee.v3.gpu.fnk    crop1x.v2_maxsize400.gpu.fnk  crop2x.v2_no_maxsize.gpu.fnk  facenorm.multicrop_full_center_size400.gpu.fnk
+bee_fast.cpu.fnk  crop2x.v2_maxsize400.cpu.fnk  cropbbox.v2.cpu.fnk           facenorm.multicrop_full_crop2x_size400.cpu.fnk
+bee_fast.gpu.fnk  crop2x.v2_maxsize400.gpu.fnk  cropbbox.v2.gpu.fnk           facenorm.multicrop_full_crop2x_size400.gpu.fnk
+
+Face recognition
+
+ls /opt/findface-multi/models/face/
+
+mango_320.cpu.fnk  nectarine_l_320.cpu.fnk  nectarine_m_160.cpu.fnk  nectarine_xs_320.cpu.fnk
+mango_320.gpu.fnk  nectarine_l_320.gpu.fnk  nectarine_m_160.gpu.fnk  nectarine_xs_320.gpu.fnk
+
+Face attribute recognition
+
+ls /opt/findface-multi/models/faceattr/
+
+beard.v0.cpu.fnk         faceattr.eyes_attrs.v0.cpu.fnk  faceattr.liveness_mobile.hart.cpu.fnk  faceattr.quality.v5.cpu.fnk
+beard.v0.gpu.fnk         faceattr.eyes_attrs.v0.gpu.fnk  faceattr.liveness_mobile.hart.gpu.fnk  faceattr.quality.v5.gpu.fnk
+emotions.v1.cpu.fnk      faceattr.gender.v3.cpu.fnk      faceattr.liveness_pacs.v3.cpu.fnk      headpose.v3.cpu.fnk
+emotions.v1.gpu.fnk      faceattr.gender.v3.gpu.fnk      faceattr.liveness_pacs.v3.gpu.fnk      headpose.v3.gpu.fnk
+faceattr.age.v3.cpu.fnk  faceattr.glasses4.v0.cpu.fnk    faceattr.liveness_web.v1.cpu.fnk       medmask3.v2.cpu.fnk
+faceattr.age.v3.gpu.fnk  faceattr.glasses4.v0.gpu.fnk    faceattr.liveness_web.v1.gpu.fnk       medmask3.v2.gpu.fnk
+
+Vehicle image normalization
+
+ls /opt/findface-multi/models/carnorm/
+
+carnorm.briacon.v3.cpu.fnk  carnorm.briacon.v3.gpu.fnk
+
+Vehicle recognition
+
+ls /opt/findface-multi/models/carrec/
+
+bottas.cpu.fnk  bottas.gpu.fnk
+
+Vehicle attribute recognition
+
+ls /opt/findface-multi/models/carattr/
+
+carattr.categories.v1.cpu.fnk   carattr.license_plate.v10.cpu.fnk         carattr.orientation.v0.cpu.fnk  carattr.special_types12.v0.cpu.fnk
+carattr.categories.v1.gpu.fnk   carattr.license_plate.v10.gpu.fnk         carattr.orientation.v0.gpu.fnk  carattr.special_types12.v0.gpu.fnk
+carattr.description.v1.cpu.fnk  carattr.license_plate_quality.v4.cpu.fnk  carattr.quality.v1.cpu.fnk      carattr.weight_types7.v0.cpu.fnk
+carattr.description.v1.gpu.fnk  carattr.license_plate_quality.v4.gpu.fnk  carattr.quality.v1.gpu.fnk      carattr.weight_types7.v0.gpu.fnk
+
+Body recognition
+
+ls /opt/findface-multi/models/pedrec/
+
+pedrec.durga.cpu.fnk  pedrec.durga.gpu.fnk
+
+Body attribute recognition
+
+ls /opt/findface-multi/models/pedattr/
+
+pedattr.age_gender.v0.cpu.fnk    pedattr.clothes_type.v0.gpu.fnk  pedattr.handface.v1.cpu.fnk    pedattr.protective.v1.gpu.fnk
+pedattr.age_gender.v0.gpu.fnk    pedattr.color.v1.cpu.fnk         pedattr.handface.v1.gpu.fnk    pedattr.quality.v0.cpu.fnk
+pedattr.bags.v0.cpu.fnk          pedattr.color.v1.gpu.fnk         pedattr.handface4.v0.cpu.fnk   pedattr.quality.v0.gpu.fnk
+pedattr.bags.v0.gpu.fnk          pedattr.fall.v1.cpu.fnk          pedattr.handface4.v0.gpu.fnk
+pedattr.clothes_type.v0.cpu.fnk  pedattr.fall.v1.gpu.fnk          pedattr.protective.v1.cpu.fnk
+
+          

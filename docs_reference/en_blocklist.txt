@@ -1,0 +1,76 @@
+
+
+# List of User Sessions. Blocklist
+
+In this chapter:
+
+Grant Permissions to Work with Sessions
+
+View User Sessions
+
+Block Device
+
+FindFace Multi allows you to monitor user sessions and learn associated data, such as the connected device UUID, type of user interface, IP address, last ping time, and so on.
+
+If necessary, you can add a device to the blocklist without deactivating the user account. The device block may come in handy in various situations. For example, if you want users to access the system only from their workplaces. Use the blocklist functionality to take your system safety to the next level.
+
+## Grant Permissions to Work with Sessions
+
+A user’s access to the list of sessions depends on the granted permissions:
+
+Administrator: can view and close sessions of all users
+
+User with the all_own_sessions permissions: can view/close all sessions initiated with their username
+
+User without the all_own_sessions permissions: can only view/close their current session
+
+## View User Sessions
+
+To view the list of user sessions, navigate Settings -> Sessions.
+
+[img:sessions_en]
+
+Each session record provides the following data:
+
+device UUID
+
+username
+
+type of the user interface (mobile/web)
+
+device information
+
+IP address
+
+status (online, offline, blocked)
+
+last ping time
+
+Use the filter panel above the list of sessions to set up the search conditions.
+
+To close a session, select it in the list and click Terminate.
+
+[img:sessions_close_en]
+
+## Block Device
+
+The list of blocked devices is available on the Blocklist Records tab.
+
+[img:blocklist_en]
+
+You can add a device to the blocklist on the Sessions tab. Blocking a device leads to the user’s automatic log-out.
+
+To block a device, do the following:
+
+Select the relevant session record(s).
+
+Click Block.
+
+[img:block_sessions_en]
+
+Specify the reason for the device to be blocked (mandatory) and the block expiry date (optional). If no date is specified, the block will be permanent.
+
+Click Save.
+
+[img:block_en]
+

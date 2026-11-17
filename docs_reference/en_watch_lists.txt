@@ -1,0 +1,59 @@
+
+
+# Watch Lists
+
+The appearance of specific individuals and vehicles in the video is monitored with a set of default and custom watch lists.
+
+Records of individuals and vehicles are assigned to watch lists. Once a watch list is activated, the system will be looking for each person or a vehicle on it during video processing.
+
+You can create as many custom watch lists as necessary: wanted, suspects, etc. — subject to your needs.
+
+In this section:
+
+Monitoring Unmatched Faces
+
+Create Watch List
+
+Remove Watch List
+
+## Monitoring Unmatched Faces
+
+FindFace Multi features a special pre-configured watch list used for monitoring only unmatched events. This watch list cannot be removed from the system. To edit its settings, navigate to the Settings tab. Click Watch Lists and then click Unmatched.
+
+[img:unmatched_en]
+
+## Create Watch List
+
+To create a custom watch list, do the following:
+
+Navigate Settings → Watch Lists.
+
+Click + Add new watch list.
+
+[img:create_list_en]
+
+On the Information tab, specify the watch list name.
+
+From the Color palette, select a color which will be shown in notifications for this list.
+
+[img:list_en]
+
+Describe the watch list in a comment if needed.
+
+By default, all watch lists in the system are applied the generic confidence threshold. To set an individual threshold for the watch list, check Confidence threshold and specify the threshold value.
+
+Important
+
+The default generic confidence threshold is optimal for the majority of recognition cases. We do not recommend changing it on your own. Be sure to consult with our technical experts prior (support@ntechlab.com).
+
+Enable Require event acknowledgment if it is mandatory that events associated with the list be manually acknowledged.
+
+Enable Do not create events to avoid creating events once an object is detected.
+
+Enable Enable sound alert to turn on sound notifications for the list if needed.
+
+On the Permissions tab, assign privileges on the watch list, specifying which user roles are allowed to change/view the watch list settings.
+
+[img:list_permissions_en]
+
+Activate and save the watch list.

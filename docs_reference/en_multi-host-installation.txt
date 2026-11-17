@@ -1,0 +1,511 @@
+
+
+# Guide to Typical Multi-Host Deployment
+
+This section is all about deploying FindFace Multi in a multi-host environment.
+
+Tip
+
+If after having read this section, you still have questions, do not hesitate to contact our experts by support@ntechlab.com.
+
+Important
+
+This section doesn’t cover the Video Recorder deployment. You can find a step-by-step instruction on this subject here.
+
+The reasons for deploying FindFace Multi in a multi-host environment are the following:
+
+The necessity to distribute the video processing high load.
+
+The necessity to process video streams from a group of cameras in the place of their physical location.
+
+Note
+
+The most common use cases where such need comes to the fore are hotel chains, chain stores, several security checkpoints in the same building, etc.
+
+See also
+
+Allocate findface-video-worker to Camera Group
+
+The necessity to distribute the feature vector extraction high load.
+
+Large number of objects to search through, that requires implementation of a distributed object database.
+
+Before you start the deployment, outline your system architecture, depending on its load and allotted resources (see Requirements). The most common distributed scheme is as follows:
+
+One principal server with the following components: findface-ntls, findface-multi-legacy, findface-sf-api, findface-video-manager, findface-upload, findface-video-worker, findface-extraction-api, findface-tarantool-server, pause, and third-parties.
+
+Several additional video processing servers with installed findface-video-worker.
+
+(If needed) Several additional extraction servers with installed findface-extraction-api.
+
+(If needed) Additional database servers with multiple Tarantool shards.
+
+This section describes the most common distributed deployment. In high load systems, it may also be necessary to distribute the API processing (findface-sf-api and findface-video-manager) across several additional servers. This procedure requires a high level of expertise and some extra coding. Please do not hesitate to contact our experts for help (support@ntechlab.com).
+
+To deploy FindFace Multi in a multi-host environment, follow the steps below:
+
+Deploy Principal Server
+
+Deploy Video Processing Servers
+
+Deploy Extraction Servers
+
+Distribute Load across Extraction Servers
+
+Deploy Additional Database Servers
+
+Configure Network
+
+## Deploy Principal Server
+
+To deploy the principal server as part of a distributed architecture, do the following:
+
+On the designated physical server, install FindFace Multi from installer as follows (don’t forget to prepare a server prior the FindFace Multi deployment):
+
+Product to install: FindFace Multi.
+
+Installation type: Single server, multiple video workers. In this case, FindFace Multi will be installed and configured to interact with additional remote findface-video-worker instances.
+
+Type of the findface-video-worker acceleration (on the principal server): CPU or GPU, subject to your hardware configuration.
+
+Type of the findface-extraction-api acceleration (on the principal server): CPU or GPU, subject to your hardware configuration.
+
+After the installation is complete, the following output will be shown on the console:
+
+#############################################################################
+#                       Installation is complete                            #
+#############################################################################
+- all configuration and data is stored in /opt/findface-multi
+- upload your license to http://172.20.77.17/#/license/
+- user interface: http://172.20.77.17/
+  superuser:      admin
+  documentation:  http://172.20.77.17/doc/
+
+Upload the FindFace Multi license file via the main web interface http://<Host_IP_address>/#/license. To access the web interface, use the provided superuser credentials.
+
+Note
+
+The host IP address is shown in the links to FindFace web services in the following way: as an external IP address if the host belongs to a network, or 127.0.0.1 otherwise.
+
+Important
+
+Do not disclose the superuser (Super Administrator) credentials to others. To administer the system, create a new user with the administrator privileges. Whatever the role, Super Administrator cannot be deprived of its rights.
+
+Allow the licensable services to access the findface-ntls license server from any IP address, To do so, open the /opt/findface-multi/configs/findface-ntls/findface-ntls.yaml configuration file and set listen: 0.0.0.0:3133. Restart the findface-multi-findface-ntls-1 container.
+
+sudo vi /opt/findface-multi/configs/findface-ntls/findface-ntls.yaml
+
+listen: 0.0.0.0:3133
+
+sudo docker container restart findface-multi-findface-ntls-1
+
+Allow accessing the findface-video-manager service from any IP address. To do so, open the /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml configuration file and set listen: 0.0.0.0:18810 and rpc:listen: 0.0.0.0:18811. Restart the findface-multi-findface-video-manager-1 container.
+
+sudo vi /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml
+
+listen: 0.0.0.0:18810
+...
+rpc:
+  listen: 0.0.0.0:18811
+
+sudo docker container restart findface-multi-findface-video-manager-1
+
+## Deploy Video Processing Servers
+
+On an additional video processing server, install only a findface-video-worker instance following the step-by-step instructions. Answer the installer questions as follows:
+
+Product to install: FindFace Video Worker.
+
+Type of the findface-video-worker acceleration: CPU or GPU, subject to your hardware configuration.
+
+FindFace Multi IP address: IP address of the principal server.
+
+After that, the installation process will automatically begin. The answers will be saved to a file /tmp/<findface-installer-*>.json. Use this file to install FindFace Video Worker on other hosts without having to answer the questions again, by executing:
+
+sudo ./<findface-*>.run -f /tmp/<findface-installer-*>.json
+
+Note
+
+If findface-ntls and/or findface-video-manager are installed on a different host than that with findface-multi-legacy, specify their IP addresses in the /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration file after the installation.
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+In the ntls_addr parameter, specify the findface-ntls host IP address.
+
+ntls_addr: 127.0.0.1:3133
+
+In the mgr -> static parameter, specify the findface-video-manager host IP address, which provides findface-video-worker with settings and the video stream list.
+
+static: 127.0.0.1:18811
+
+## Deploy Extraction Servers
+
+On an additional extraction server, install only a findface-extraction-api instance from the console installer. Answer the installer questions as follows:
+
+Product to install: FindFace Multi.
+
+Installation type: Fully customized installation.
+
+FindFace Multi components to install: findface-extraction-api, findface-data, and pause. To make a selection, first, deselect all the listed components by entering -* in the command line, then select findface-extraction-api, findface-data, and pause by entering their sequence number (keyword). Enter done to save your selection and proceed to another step.
+
+Note
+
+The pause component keeps information about other components’ network namespaces. It’s essential that you install it.
+
+Type of findface-extraction-api acceleration: CPU or GPU.
+
+Modification of the /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml configuration file: specify the IP address of the findface-ntls server.
+
+Neural network models to install: CPU or GPU model for face biometrics (mandatory), and (optional) CPU/GPU models to recognize face attributes, vehicle and vehicle attributes, and body and body attributes. Be sure to choose the right acceleration type for each model, matching the acceleration type of findface-extraction-api: CPU or GPU. Be aware that findface-extraction-api on CPU can work only with CPU-models, while findface-extraction-api on GPU supports both CPU- and GPU-models.
+
+Tip
+
+See Neural Networks Summary, Enable Face and Face Attribute Recognition, Enable Vehicle and Vehicle Attribute Recognition, Enable Body and Body Attribute Recognition for details.
+
+To move the principal findface-extraction-api instance to another host, in the /opt/findface-multi/configs/findface-sf-api/findface-sf-api.yaml configuration file specify the IP address of the extraction server host and set listen: 0.0.0.0:18411.
+
+listen: 0.0.0.0:18411
+extraction-api:
+  timeouts:
+    connect: 5s
+    response_header: 30s
+    overall: 35s
+    idle_connection: 10s
+  max-idle-conns-per-host: 20
+  keepalive: 24h0m0s
+  trace: false
+  extraction-api: http://172.20.77.19:18666
+
+After that, the installation process will automatically begin. The answers will be saved to a file /tmp/<findface-installer-*>.json. Use this file to install findface-extraction-api on other hosts without having to answer the questions again.
+
+sudo ./<findface-*>.run -f /tmp/<findface-installer-*>.json
+
+After all the extraction servers are deployed, distribute load across them by using a load balancer.
+
+## Distribute Load across Extraction Servers
+
+To distribute load across several extraction servers, you need to set up load balancing. The following step-by-step instructions demonstrate how to set up nginx load balancing in a round-robin fashion for 3 findface-extraction-api instances located on different physical hosts: one on the FindFace Multi principal server (172.168.1.9), and 2 on additional remote servers (172.168.1.10, 172.168.1.11). Should you have more extraction servers in your system, load-balance them by analogy.
+
+Tip
+
+You can use any load balancer according to your preference. Please refer to the relevant official documentation for guidance.
+
+To set up load balancing, do the following:
+
+Designate the FindFace Multi principal server (recommended) or any other server with running findface-sf-api service as a gateway to all the extraction servers.
+
+Important
+
+You will have to specify the gateway server IP address when configuring the FindFace Multi network.
+
+On the designated server with the installed findface-sf-api instance create a nginx folder that contains the extapi.conf file in the /opt/findface-multi/configs/ directory. Make sure that the extapi.conf file includes the information like in the example below. In the upstream directive (upstream extapibackends), substitute the exemplary IP addresses with the actual IP addresses of the extraction servers. In the server directive, specify the gateway server listening port as listen. You will have to enter this port when configuring the FindFace Multi network.
+
+upstream extapibackends {
+        server 172.168.1.9:18666; ## ``findface-extraction-api`` on principal server
+        server 172.168.1.10:18666; ## 1st additional extraction server
+        server 127.168.1.11:18666; ## 2nd additional extraction server
+}
+server {
+        listen 18667;
+        server_name extapi;
+        client_max_body_size 64m;
+        location / {
+                proxy_pass http://extapibackends;
+                proxy_next_upstream error;
+        }
+        access_log /var/log/nginx/extapi.access_log;
+        error_log /var/log/nginx/extapi.error_log;
+}
+
+Define the Nginx service in the docker-compose.yaml file. To do that, add the container with Nginx image to the docker-compose.yaml file:
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+
+nginx:
+  image: nginx:latest
+  ports:
+    - 18667:18667
+  volumes:
+    - ./configs/nginx/extapi.conf:/etc/nginx/conf.d/default.conf:ro
+
+In the findface-sf-api configuration file, specify the distributor address:
+
+sudo vi /opt/findface-multi/configs/findface-sf-api/findface-sf-api.yaml
+
+listen: 0.0.0.0:18411
+...
+extraction-api: http://172.168.1.9:18667
+
+Restart the containers.
+
+cd /opt/findface-multi/
+sudo docker-compose down
+sudo docker-compose up -d
+
+On the principal server and each additional extraction server, open the /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml configuration file. Substitute localhost in the listen parameter with the relevant server address that you have specified in upstream extapibackends (/opt/findface-multi/configs/nginx/extapi.conf) before. In our example, the address of the 1st additional extraction server has to be substituted as such:
+
+sudo vi /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml
+
+listen: 172.168.1.10:18666
+
+Restart the findface-multi-findface-extraction-api-1 container on the principal server and each additional extraction server.
+
+sudo docker container restart findface-multi-findface-extraction-api-1
+
+The load balancing is now successfully set up. Be sure to specify the actual gateway server IP address and listening port, when configuring the FindFace Multi network.
+
+## Deploy Additional Database Servers
+
+The findface-tarantool-server component connects the Tarantool-based feature vector database and the findface-sf-api component, transferring search results from the database to findface-sf-api for further processing.
+
+To increase search speed, you can allocate several additional servers to the feature vector database and create multiple findface-tarantool-server shards on each additional server. The concurrent functioning of multiple shards will lead to a remarkable increase in performance, as each shard can handle up to approximately 10,000,000 feature vectors.
+
+To deploy additional database servers, do the following:
+
+Install the findface-tarantool-server component on the first designated server. The pause component should already be installed on the server. If not, install it along with the findface-tarantool-server component. Answer the installer questions as follows:
+
+Product to install: FindFace Multi.
+
+Installation type: Fully customized installation.
+
+FindFace Multi components to install: findface-tarantool-server, pause. To make a selection, first, deselect all the listed components by entering -* in the command line, then select findface-tarantool-server and pause by entering their sequence number (keyword). Enter done to save your selection and proceed to another step.
+
+After that, the installation process will automatically begin.
+
+As a result of the installation, the findface-tarantool-server shards will be automatically installed in the amount of N = min(max(min(mem_mb // 2000, cpu_cores), 1), 16 * cpu_cores). I.e., it is equal to the RAM size in MB divided by 2000, or the number of CPU physical cores (but at least one shard), or the number of CPU physical cores multiplied by 16 if the first obtained value is greater.
+
+Use the created /tmp/<findface-installer-*>.json file to install findface-tarantool-server on other servers without answering the questions again. To do so, execute:
+
+sudo ./<findface-*>.run -f /tmp/<findface-installer-*>.json
+
+Be sure to specify the IP addresses and ports of the shards later on when configuring the FindFace Multi network. To learn the port numbers, execute on each database server:
+
+sudo cat /opt/findface-multi/docker-compose.yaml | grep -E "CFG_LISTEN_PORT"
+
+You will get the following result:
+
+CFG_LISTEN_PORT=8101, CFG_EXTRA_LUA=loadfile("/tnt_schema.lua")()]
+CFG_LISTEN_PORT=8102, CFG_EXTRA_LUA=loadfile("/tnt_schema.lua")()]
+CFG_LISTEN_PORT=8103, CFG_EXTRA_LUA=loadfile("/tnt_schema.lua")()]
+CFG_LISTEN_PORT=8104, CFG_EXTRA_LUA=loadfile("/tnt_schema.lua")()]
+CFG_LISTEN_PORT=8105, CFG_EXTRA_LUA=loadfile("/tnt_schema.lua")()]
+CFG_LISTEN_PORT=8106, CFG_EXTRA_LUA=loadfile("/tnt_schema.lua")()]
+CFG_LISTEN_PORT=8107, CFG_EXTRA_LUA=loadfile("/tnt_schema.lua")()]
+CFG_LISTEN_PORT=8108, CFG_EXTRA_LUA=loadfile("/tnt_schema.lua")()]
+
+The port numbers are 8101, 8102, etc.
+
+On the designated server with the installed findface-tarantool-server component, modify the configuration of each shard in the /opt/findface-multi/docker-compose.yaml file. Specify findface-ntls license server address in the CFG_NTLS parameter. Set CFG_LISTEN_HOST=0.0.0.0.
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+
+findface-tarantool-server-shard-001:
+  depends_on: []
+  environment: ['TT_LISTEN=127.0.0.1:32001', TT_WORK_DIR=/var/lib/tarantool/FindFace,
+    TT_WAL_DIR=xlogs, TT_MEMTX_DIR=snapshots, TT_MEMTX_MEMORY=2147483648, TT_CHECKPOINT_INTERVAL=14400,
+    TT_CHECKPOINT_COUNT=3, TT_FORCE_RECOVERY=true, 'CFG_NTLS=172.23.218.110:3133', CFG_LISTEN_HOST=0.0.0.0,
+    CFG_LISTEN_PORT=8101, CFG_EXTRA_LUA=loadfile("/tnt_schema.lua")()]
+  image: docker.int.ntl/ntech/universe/tntapi:ffserver-12.240830.2
+  logging: {driver: journald}
+  network_mode: service:pause
+  restart: always
+  volumes: ['./data/findface-tarantool-server/shard-001:/var/lib/tarantool/FindFace',
+    './configs/findface-tarantool-server/tnt-schema.lua:/tnt_schema.lua:ro']
+
+Restart the containers.
+
+cd /opt/findface-multi/
+sudo docker-compose down
+sudo docker-compose up -d
+
+Open the /opt/findface-multi/configs/findface-ntls/findface-ntls.yaml configuration file and set listen: 0.0.0.0:3133.
+
+sudo vi /opt/findface-multi/configs/findface-ntls/findface-ntls.yaml
+
+listen: 0.0.0.0:3133
+license_dir: /ntech/license
+proxy: ''
+ui: 0.0.0.0:3185
+
+Modify the /opt/findface-multi/configs/findface-sf-api/findface-sf-api.yaml configuration file. Set listen: 0.0.0.0:18411 and specify shards.
+
+sudo vi /opt/findface-multi/configs/findface-sf-api/findface-sf-api.yaml
+
+listen: 0.0.0.0:18411
+extraction-api:
+  timeouts:
+    connect: 5s
+    response_header: 30s
+    overall: 35s
+    idle_connection: 10s
+  max-idle-conns-per-host: 20
+  keepalive: 24h0m0s
+  trace: false
+  extraction-api: http://127.0.0.1:18666
+storage-api:
+  timeouts:
+    connect: 5s
+    response_header: 30s
+    overall: 35s
+    idle_connection: 10s
+  max-idle-conns-per-host: 20
+  keepalive: 24h0m0s
+  trace: false
+  shards:
+  - master: http://172.20.77.19:8101/v2/
+    slave: ''
+  - master: http://172.20.77.19:8102/v2/
+    slave: ''
+
+To apply migrations, restart FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+## Configure Network
+
+After all the FindFace Multi components are deployed, configure their interaction over the network. Do the following:
+
+Open the /opt/findface-multi/configs/findface-sf-api/findface-sf-api.yaml configuration file:
+
+sudo vi /opt/findface-multi/configs/findface-sf-api/findface-sf-api.yaml
+
+Specify the following parameters:
+
+Parameter
+
+Description
+
+extraction-api -> extraction-api
+
+IP address and listening port of the gateway extraction server with set up
+load balancing.
+
+storage-api -> shards -> master
+
+IP address and port of the findface-tarantool-server master shard. Specify each shard by analogy.
+
+upload_url
+
+WebDAV NginX path to send original images, thumbnails and normalized object images to the
+findface-upload service.
+
+...
+extraction-api:
+  extraction-api: http://172.168.1.9:18667
+
+...
+webdav:
+  upload-url: http://127.0.0.1:3333/uploads/
+
+...
+storage-api:
+  ...
+  shards:
+  - master: http://172.168.1.9:8101/v2/
+    slave: ''
+  - master: http://172.168.1.9:8102/v2/
+    slave: ''
+  - master: http://172.168.1.12:8101/v2/
+    slave: ''
+  - master: http://172.168.1.12:8102/v2/
+    slave: ''
+  - master: http://172.168.1.13:8102/v2/
+    slave: ''
+  - master: http://172.168.1.13:8102/v2/
+    slave: ''
+
+Restart the findface-multi-findface-sf-api-1 container.
+
+sudo docker container restart findface-multi-findface-sf-api-1
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+Specify the following parameters:
+
+Parameter
+
+Description
+
+SERVICE_EXTERNAL_ADDRESS
+
+FindFace Multi IP address or URL prioritized for the Genetec integration and webhooks.
+Once this parameter not specified, the system uses EXTERNAL_ADDRESS for these purposes.
+To use Genetec and webhooks, be sure to specify at least one of those parameters:
+SERVICE_EXTERNAL_ADDRESS, EXTERNAL_ADDRESS.
+
+EXTERNAL_ADDRESS
+
+(Optional) IP address or URL that can be used to access the FindFace Multi web interface.
+Once this parameter not specified, the system auto-detects it as the external IP address. To access
+FindFace Multi, you can use both the auto-detected and specified IP addresses.
+
+VIDEO_DETECTOR_TOKEN
+
+To authorize the video object detection module, come up with a token and specify it here.
+
+VIDEO_MANAGER_ADDRESS
+
+IP address of the findface-video-manager host.
+
+NTLS_HTTP_URL
+
+IP address of the findface-ntls host.
+
+ROUTER_URL
+
+External IP address of the findface-multi-legacy host that will receive detected objects from the
+findface-video-worker instance(s).
+
+SF_API_ADDRESS
+
+IP address of the findface-sf-api host.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+...
+# SERVICE_EXTERNAL_ADDRESS is prioritized for FFSecurity webhooks and Genetec plugin.
+SERVICE_EXTERNAL_ADDRESS = 'http://localhost'
+EXTERNAL_ADDRESS = 'http://127.0.0.1'
+
+...
+FFSECURITY = {
+    'VIDEO_DETECTOR_TOKEN': '7ce2679adfc4d74edcf508bea4d67208',
+    ...
+    'VIDEO_MANAGER_ADDRESS': 'http://127.0.0.1:18810',
+    ...
+    'NTLS_HTTP_URL': 'http://127.0.0.1:3185',
+    'ROUTER_URL': 'http://172.168.1.9',
+    ...
+    'SF_API_ADDRESS': 'http://127.0.0.1:18411',
+    ...
+}
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+The FindFace Multi components interaction is now set up.
+
+Important
+
+To preserve the FindFace Multi compatibility with the installation environment, we highly recommend you to disable the Ubuntu automatic update. In this case, you will be able to update your OS manually, fully controlling which packages to update.
+
+To disable the Ubuntu automatic update, execute the following commands:
+
+sudo apt-get remove unattended-upgrades
+sudo systemctl stop apt-daily.timer
+sudo systemctl disable apt-daily.timer
+sudo systemctl disable apt-daily.service
+sudo systemctl daemon-reload
+
+Important
+
+The FindFace Multi services log a large amount of data, which can eventually lead to disc overload. To prevent this from happening, we advise you to disable rsyslog due to its suboptimal log rotation scheme and use the appropriately configured systemd-journal service instead. See Logging for the step-by-step instructions.
+
+          

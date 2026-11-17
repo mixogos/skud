@@ -1,0 +1,264 @@
+
+
+# Настройка Видеомагнитофона
+
+Внутренняя архитектура Ядра FindFace позволяет встроить дополнительную функциональность «Видеомагнитофон», которая позволяет записывать, хранить и проигрывать видеоданные с камер.
+
+Данный раздел посвящен настройке Видеомагнитофона.
+
+В этом разделе:
+
+Включение Видеомагнитофона
+
+Особенности отключения Видеомагнитофона
+
+## Включение Видеомагнитофона
+
+Для активации Видеомагнитофона выполните следующие действия:
+
+Включите возможность передачи видеофрагментов от findface-video-worker в сервис findface-video-storage.
+
+Важно
+
+Данная настройка делает функциональность Видеомагнитофона доступной через HTTP API. Она также обязательна, если вы собираетесь использовать Видеомагнитофон в составе веб-интерфейса FindFace Multi.
+
+Выполните следующие действия:
+
+Откройте файл конфигурации /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml для включения сервиса findface-video-worker, который будет поставлять видео в Видеомагнитофон.
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+Установите enabled: true в разделе recorder.
+
+recorder:
+  enabled: true
+  ...
+
+Перезапустите контейнер findface-multi-findface-video-worker-1.
+
+sudo docker container restart findface-multi-findface-video-worker-1
+
+Настройте Видеомагнитофон для работы в составе веб-интерфейса FindFace Multi.
+
+Примечание
+
+Пропустите следующие шаги, если вам не нужно, чтобы инструменты Видеомагнитофона отображались в веб-интерфейсе FindFace Multi.
+
+Выполните следующие действия:
+
+Откройте файл конфигурации /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+Найдите раздел FFSECURITY_UI_CONFIG -> vms.
+
+Список параметров для включения элементов видеомагнитофона в интерфейсе FindFace Multi:
+
+Параметр
+
+Описание
+
+vms -> "enabled"
+
+Установив значение True, вы добавите флажок Записывать видео в настройки камеры и включите просмотр событий на временной шкале видеоплеера.
+
+Найдите раздел FFSECURITY_UI_CONFIG -> video_player.
+
+Список параметров для настройки параметров видеоплеера:
+
+Параметр
+
+Описание
+
+"overlay" -> "objects"
+
+Определяет настройки для отображения рамок и данных по атрибутам для лиц, силуэтов и транспортных средств соответственно. Установите True или False чтобы включить/выключить их отображение.
+
+"overlay" -> "gdpr"
+
+Установите True, чтобы включить размытие на видеоплеере всех объектов без совпадений. Для того чтобы в полном объеме выполнить требования законов о защите персональных данных, руководствуйтесь данной инструкцией.
+
+"timeline" -> "min_zoom"
+
+Определяет самый крупный возможный масштаб на временной шкале видеоплеера, секунды/пиксель.
+
+"timeline" -> "max_zoom"
+
+Определяет самый мелкий возможный масштаб на временной шкале, секунды/пиксель.
+
+"timeline" -> "objects" -> "events"
+"faces" -> "enabled"
+
+Установите True, чтобы отмечать на временной шкале все события с лицами в виде маркеров.
+
+"timeline" -> "objects" -> "events"
+"faces" -> "limit"
+
+Максимальное количество событий с лицами, одновременно отмеченных на временной шкале. Если событий с лицами больше, вам будет предложено увеличить масштаб.
+
+"timeline" -> "objects" -> "events"
+"faces" -> "matchedColor"
+
+Цвет событий с лицами с совпадением.
+
+"timeline" -> "objects" -> "events"
+"faces" -> "unmatchedColor"
+
+Цвет событий с лицами без совпадений.
+
+"timeline" -> "objects" -> "events"
+"bodies" -> "enabled"
+
+Установите True, чтобы отмечать на временной шкале все события с силуэтами в виде маркеров.
+
+"timeline" -> "objects" -> "events"
+"bodies" -> "limit"
+
+Максимальное количество событий с силуэтами, одновременно отмеченных на временной шкале. Если событий с силуэтами больше, вам будет предложено увеличить масштаб.
+
+"timeline" -> "objects" -> "events"
+"bodies" -> "matchedColor"
+
+Цвет событий с силуэтами с совпадением.
+
+"timeline" -> "objects" -> "events"
+"bodies" -> "unmatchedColor"
+
+Цвет событий с силуэтами без совпадений.
+
+"timeline" -> "objects" -> "events"
+"cars" -> "enabled"
+
+Установите True, чтобы отмечать на временной шкале все события с транспортными средствами в виде маркеров.
+
+"timeline" -> "objects" -> "events"
+"cars" -> "limit"
+
+Максимальное количество событий с транспортными средствами, одновременно отмеченных на временной шкале. Если событий с транспортными средствами больше, вам будет предложено увеличить масштаб.
+
+"timeline" -> "objects" -> "events"
+"cars" -> "matchedColor"
+
+Цвет событий с транспортными средствами с совпадением.
+
+"timeline" -> "objects" -> "events"
+"cars" -> "unmatchedColor"
+
+Цвет событий с транспортными средствами без совпадений.
+
+"timeline" -> "objects" -> "episodes"
+"humans" -> "enabled"
+
+Установите True, чтобы отмечать на временной шкале все эпизоды с людьми в виде маркеров.
+
+"timeline" -> "objects" -> "episodes"
+"humans" -> "limit"
+
+Максимальное количество эпизодов с людьми, одновременно отмеченными на временной шкале. Если эпизодов с людьми больше, вам будет предложено увеличить масштаб.
+
+"timeline" -> "objects" -> "episodes"
+"humans" -> "matchedColor"
+
+Цвет эпизодов с людьми с совпадением.
+
+"timeline" -> "objects" -> "episodes"
+"humans" -> "unmatchedColor"
+
+Цвет эпизодов с людьми без совпадений.
+
+"timeline" -> "objects" -> "episodes"
+"cars" -> "enabled"
+
+Установите True, чтобы отмечать на временной шкале все эпизоды с транспортными средствами в виде маркеров.
+
+"timeline" -> "objects" -> "episodes"
+"cars" -> "limit"
+
+Максимальное количество эпизодов с транспортными средствами, одновременно отмеченных на временной шкале. Если эпизодов с транспортными средствами больше, вам будет предложено увеличить масштаб.
+
+"timeline" -> "objects" -> "episodes"
+"cars" -> "matchedColor"
+
+Цвет эпизодов с транспортными средствами с совпадением.
+
+"timeline" -> "objects" -> "episodes"
+"cars" -> "unmatchedColor"
+
+Цвет эпизодов с транспортными средствами без совпадений.
+
+FFSECURITY_UI_CONFIG = {
+
+"video_player": {
+ "overlay": {
+     "objects": {
+         "faces": {
+           "bbox": True,
+           "info": True
+         },
+         "bodies": {
+           "bbox": True,
+           "info": True
+         },
+         "cars": {
+           "bbox": True,
+           "info": True
+         }
+     },
+     "gdpr": False
+ },
+ "timeline": {
+     "min_zoom": 0.2,
+     "max_zoom": 200,
+     "objects": {
+         "events": {
+             "faces": {
+                 "enabled": True,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+             "bodies": {
+                 "enabled": False,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+             "cars": {
+                 "enabled": False,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+         },
+         "episodes": {
+             "humans": {
+                 "enabled": False,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+             "cars": {
+                 "enabled": False,
+                 "limit": 500,
+                 "matchedColor": "rgba(6,193,103,0.8)",
+                 "unmatchedColor": "rgba(232,92,74,0.8)",
+             },
+         },
+     },
+ },
+},
+"vms": {
+   "enabled": True,
+},
+
+Выполните перезапуск контейнеров FindFace Multi.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+## Особенности отключения Видеомагнитофона
+
+Если Видеомагнитофон работает и записывает видео на выбранных камерах, а вам нужно отключить его, обязательно сначала отключите запись видео на данных камерах. Только после этого можно перейти к изменению файлов конфигурации /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py и /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml.
+
+          

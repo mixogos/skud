@@ -1,0 +1,21 @@
+
+
+# Configure Saving Images in Reports
+
+When building reports, you will be able to choose to save the report images as links, thumbnails, or full frames. It is possible to configure the image parameters. To do so, open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file and alter the default JPEG quality and the maximum height of thumbnails and full frames, subject to your free disc space.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+# reports image saving options
+'REPORT_THUMBNAIL_JPEG_QUALITY': 75,
+'REPORT_THUMBNAIL_MAX_HEIGHT': 100,
+'REPORT_FULLFRAME_JPEG_QUALITY': 75,
+'REPORT_FULLFRAME_MAX_HEIGHT': 250,
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+          

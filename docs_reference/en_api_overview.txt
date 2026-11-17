@@ -1,0 +1,35 @@
+
+
+# Overview
+
+Tip
+
+If after having read this section, you still have questions, do not hesitate to contact our experts by email: support@ntechlab.com.
+
+Authentication
+
+All API methods require a simple token-based HTTP Authentication. To authenticate, put the word “Token” and a token, separated by whitespace, into the Authorization HTTP header: Authorization: Token 000... All requests that fail to provide a valid authentication token will result in an HTTP 401 Unauthorized response.
+
+Parameters Format
+
+There are two ways to pass parameters to the API methods:
+
+application/json: parameters are represented by a JSON contained in the body.
+
+multipart/form-data: parameters are encoded into separate parts. This way supports uploading a photo image file in the same request.
+
+Additional Information
+
+Standard extraction limits:
+
+Image formats: JPEG, PNG, WEBP
+
+Maximum photo file size: 10 MB
+
+Maximum photo resolution: 6000 pixels on the biggest side
+
+Minimal size of a face: 50x50 pixels
+
+Check /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml for custom definition.
+
+          

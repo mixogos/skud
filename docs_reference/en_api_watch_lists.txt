@@ -1,0 +1,482 @@
+
+
+# Watch lists
+
+## List watch lists
+
+To list watch lists, use the following method:
+
+GET /watch-lists/
+
+The REQUEST contains the following QUERY-STRING PARAMETERS:
+
+Name
+
+Schema
+
+Description
+
+limit
+
+integer
+
+Number of results to return.
+
+ordering
+
+string
+
+Available fields: id, created_date, modified_date.
+
+To look for watch lists id point out some value of limit and for ordering.
+
+CURL example
+
+curl -X GET "http://<findface-ip:port>/watch-lists/?limit=2&ordering=id" \
+ -H "Accept: application/json" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Token <token>" \
+
+If the response is successful (OK: 200), it returns an object that contains array of results with the following parameters. Example.
+
+Tip
+
+* – means required parameters. 🆁 – read only.
+
+Name
+
+Schema
+
+Description
+
+id*
+
+integer 🆁
+
+Watch list ID.
+
+created_date*
+
+date-time 🆁
+
+Object creation date.
+
+modified_date*
+
+date-time 🆁
+
+Object modification date.
+
+active
+
+boolean
+
+true if a watch list is enabled.
+
+name*
+
+string
+
+Short watch list name, up to 256 characters.
+
+comment
+
+string
+
+Extended description, up to 2048 characters.
+
+color
+
+string
+
+Color of the object label in hex. Constraints: Max 6 chars.
+
+notify
+
+boolean
+
+true if the notifications on the watch list enabled.
+
+acknowledge
+
+boolean
+
+Require manual acknowledgment of the events that match with the watch list.
+
+permissions
+
+{<any-key>: string}
+
+Permissions.
+
+camera_groups
+
+[integer]
+
+List of the camera groups used to monitor the watch list.
+
+face_threshold
+
+number┃null
+
+Watch list face confidence threshold. Constraints: Min 0┃Max 1.
+
+body_threshold
+
+number┃null
+
+Watch list body confidence threshold. Constraints: Min 0┃Max 1.
+
+car_threshold
+
+number┃null
+
+Watch list car confidence threshold. Constraints: Min 0┃Max 1.
+
+ignore_events
+
+boolean
+
+Events won’t be created if set to True.
+
+send_events_to_external_vms
+
+boolean
+
+true if events matched with this watch list should be sent to an external VMS.
+
+active_after
+
+date-time┃null
+
+Data-time information.
+
+active_before
+
+date-time┃null
+
+Data-time information.
+
+disable_schedule
+
+{…}
+
+Serializer mixin that raises ValidationError if excess fields are presented. Can be used in nested serializers.
+
+recount_schedule_on* 🆁
+
+date-time
+
+Data-time information.
+
+origin
+
+string
+
+Constraints: Max 256 chars bit.
+
+Response example
+
+{
+ "results": [
+   {
+     "id": -1,
+     "created_date": "2023-01-16T13:44:36.407610Z",
+     "modified_date": "2023-01-16T13:44:36.407750Z",
+     "active": true,
+     "name": "Unmatched",
+     "comment": "Default list for unmatched events",
+     "color": "ffffff",
+     "notify": false,
+     "acknowledge": false,
+     "permissions": {
+       "1": "edit",
+       "2": "view",
+       "3": "view"
+     },
+     "camera_groups": [],
+     "face_threshold": null,
+     "body_threshold": null,
+     "car_threshold": null,
+     "ignore_events": false,
+     "send_events_to_external_vms": false,
+     "active_after": null,
+     "active_before": null,
+     "disable_schedule": {},
+     "recount_schedule_on": null,
+     "origin": "ffsecurity"
+   },
+   {
+     "id": 1,
+     "created_date": "2023-01-16T13:44:36.394542Z",
+     "modified_date": "2023-01-16T13:44:36.394577Z",
+     "active": true,
+     "name": "Default Watch List",
+     "comment": "",
+     "color": "123456",
+     "notify": false,
+     "acknowledge": false,
+     "permissions": {
+       "1": "edit",
+       "2": "view",
+       "3": "view"
+     },
+     "camera_groups": [],
+     "face_threshold": null,
+     "body_threshold": null,
+     "car_threshold": null,
+     "ignore_events": false,
+     "send_events_to_external_vms": false,
+     "active_after": null,
+     "active_before": null,
+     "disable_schedule": {},
+     "recount_schedule_on": null,
+     "origin": "ffsecurity"
+   }
+ ]
+}
+
+## Create a new watch list
+
+To add a new watch list, use the following method:
+
+POST /watch-lists/
+
+The REQUEST BODY is required and contains application/json object with the watch lists parameters.
+
+Name
+
+Schema
+
+Description
+
+active
+
+boolean
+
+true if a watch list is enabled.
+
+name*
+
+string
+
+Short watch list name, up to 256 characters.
+
+comment
+
+string
+
+Extended description, up to 2048 characters.
+
+color
+
+string
+
+Color of the object label in hex. Constraints: 1 to 6 chars.
+
+notify
+
+boolean
+
+true if the notifications on the watch list enabled.
+
+acknowledge
+
+boolean
+
+Require manual acknowledgment of the events that match with the watch list.
+
+permissions
+
+<any-key>: string
+
+Constraints: Min 1 chars.
+
+camera_groups
+
+[integer]
+
+List of the camera groups used to monitor the watch list.
+
+face_threshold
+
+number┃null
+
+Watch list face confidence threshold. Constraints: Min 0┃Max 1.
+
+body_threshold
+
+number┃null
+
+Watch list body confidence threshold. Constraints: Min 0┃Max 1.
+
+car_threshold
+
+number┃null
+
+Watch list car confidence threshold. Constraints: Min 0┃Max 1.
+
+ignore_events
+
+boolean
+
+Events won’t be created if set to True.
+
+send_events_to_external_vms
+
+boolean
+
+true if events matched with this watch list should be sent to an external VMS.
+
+active_after
+
+date-time┃null
+
+Date-time information.
+
+active_before
+
+date-time┃null
+
+Date-time information.
+
+disable_schedule
+
+{…}
+
+Serializer mixin that raises ValidationError if excess fields are presented. Can be used in nested serializers.
+
+origin
+
+string
+
+Constraints: 1 to 256 chars bit.
+
+Request example
+
+Tip
+
+This example is given for reference only, substitute your values in the corresponding fields. You may fill in only the required fields, and the others will be by default.
+
+{
+ "active": false,
+ "name": "A",
+ "comment": "AAAAAA",
+ "color": "A",
+ "notify": false,
+ "acknowledge": false,
+ "permissions": {},
+ "camera_groups": [
+   0
+ ],
+ "face_threshold": 0,
+ "body_threshold": 0,
+ "car_threshold": 0,
+ "ignore_events": false,
+ "send_events_to_external_vms": false,
+ "active_after": "1970-01-01T00:00:00.000Z",
+ "active_before": "1970-01-01T00:00:00.000Z",
+ "disable_schedule": {
+   "monday": [
+     [
+       "A"
+     ]
+   ],
+   "tuesday": [
+     [
+       "A"
+     ]
+   ],
+   "wednesday": [
+     [
+       "A"
+     ]
+   ],
+   "thursday": [
+     [
+       "A"
+     ]
+   ],
+   "friday": [
+     [
+       "A"
+     ]
+   ],
+   "saturday": [
+     [
+       "A"
+     ]
+   ],
+   "sunday": [
+     [
+       "A"
+     ]
+   ]
+ },
+ "origin": "A"
+}
+
+You may send these parameters:
+
+{
+ "active": true,
+ "name": "Test_list",
+ "comment": "AAAAAA",
+ "color": "35a2ee"
+}
+
+CURL example
+
+curl -X POST "http://<findface-ip:port>/watch-lists/" \
+ -H "Accept: application/json" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Token <token>" \
+ -H "Content-Type: application/json" \
+ -d '{"active":true,"name":"Test_list","comment":"AAAAAA","color":"35a2ee"}' \
+
+If the response is successful (Created: 201), it returns an object that contains parameters. Example.
+
+Response example
+
+{
+ "id": 2,
+ "created_date": "2023-01-16T14:07:52.424520Z",
+ "modified_date": "2023-01-16T14:07:52.424549Z",
+ "active": true,
+ "name": "Test_list",
+ "comment": "AAAAAA",
+ "color": "35a2ee",
+ "notify": false,
+ "acknowledge": false,
+ "permissions": {
+   "1": "edit"
+ },
+ "camera_groups": [],
+ "face_threshold": 0,
+ "body_threshold": 0,
+ "car_threshold": 0,
+ "ignore_events": false,
+ "send_events_to_external_vms": false,
+ "active_after": null,
+ "active_before": null,
+ "disable_schedule": {},
+ "recount_schedule_on": null,
+ "origin": "ffsecurity"
+}
+
+Use watch list id to make a POST request for creating a new card.
+
+## Useful requests
+
+GET /watch-lists/
+POST /watch-lists/
+GET /watch-lists/{id}/
+DELETE /watch-lists/{id}/
+PATCH /watch-lists/{id}/
+POST /watch-lists/{id}/purge/
+GET /watch-lists/count/
+POST /watch-lists/purge_all/
+
+          

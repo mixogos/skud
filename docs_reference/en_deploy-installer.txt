@@ -1,0 +1,539 @@
+
+
+# FindFace Multi Standalone Automated Deployment
+
+To deploy FindFace Multi as a standalone server in one run, follow the instructions below. Being the simplest, this installation type is excellent to start off your work with FindFace Multi. Be sure to meet the system requirements and prepare the server on Ubuntu or Debian first.
+
+Do the following:
+
+Download the installer file findface-*.run.
+
+Put the .run file into some directory on the designated host (for example, /home/username).
+
+From this directory, make the .run file executable.
+
+Note
+
+Be sure to specify the actual file name instead of findface-*.
+
+chmod +x findface-*.run
+
+Execute the .run file.
+
+sudo ./findface-*.run
+
+The installer will ask you a few questions and perform several automated checks to ensure that the host meets the system requirements. After filling out each prompt, press Enter. The questions and answers are the following:
+
+Q: Which product should be installed?
+
+A: 1
+
+1. [multi   ]  FindFace Multi
+2. [server  ]  FindFace Server
+3. [video-worker]  FindFace Video Worker
+
+(default: multi)
+product> 1
+
+Q: Please choose installation type:
+
+A: 1
+
+-  1 [stand-alone ]  Single Server
+-  2 [multi-worker]  Single Server, Multiple video workers
+-  3 [images      ]  Don't install anything, just load the images
+-  4 [custom      ]  Fully customized installation
+
+(default: stand-alone)
+type> 1
+
+Q: Directory to install into:
+
+A: Specify the FindFace Multi installation directory. By default, it’s /opt/findface-multi. Press Enter to confirm it. Otherwise, specify the directory of your choice and press Enter.
+
+Directory to install into:
+(default: /opt/findface-multi)
+dest_dir>
+
+Q: Do you want to install Video Recorder?(y/n)
+
+A: y or n, subject to your needs.
+
+Do you want to install Video Recorder?(y/n)
+install_video_recorder> n
+
+Q: Found X interface(s). Which one should we announce as our external address?
+
+A: Choose the interface that you are going to use as the instance IP address.
+
+Found 3 interface(s). Which one should we announce as our external address?
+
+-  1 [lo      ]  127.0.0.1
+-  2 [ens3    ]  192.168.112.254
+-  3 [docker0 ]  10.44.132.1
+
+(default: 192.168.112.254)
+ext_ip.advertised> 2
+
+Q: Which variant of Video Worker should be installed?
+
+A: Specify the findface-video-worker variant, CPU or GPU.
+
+Which variant of Video Worker should be installed?
+
+-  1 [cpu]  CPU-based implementation, slower but doesn't require GPU
+-  2 [gpu]  CUDA-based implementation of video detector, requires NVIDIA GPU
+
+(default: cpu)
+findface-video-worker.variant> 1
+
+Q: Which variant of Extraction API should be installed?
+
+A: Specify the findface-extraction-api variant, CPU or GPU.
+
+Which variant of Extraction API should be installed?
+
+-  1 [cpu]  CPU-only implementation, slower but doesn't require GPU
+-  2 [gpu]  CUDA-based implementation, faster, requires NVIDIA GPU (supports both CPU and GPU models)
+
+(default: cpu)
+findface-extraction-api.variant> 1
+
+Q: Which variant of findface-ntls should be installed?
+
+A: Specify the findface-ntls variant. Select 2 only if you use a Sentinel license that was activated before 2024. Otherwise, select 1.
+
+ Which variant of findface-ntls should be installed?
+
+ -  1 [default]  Default ntls variant
+ -  2 [old-sentinel]  Backward compatibility variant for Sentinel licenses activated before 2024
+
+(default: default)
+findface-ntls.variant> 1
+
+Q: Do you want to configure detectors and features right now?(y/n)
+
+A: We recommend you to install and configure the object detection and object attribute recognition functionality straightaway during the installation. Answer y to initiate the process. You can skip it, though, by answering n and perform the necessary steps later, following the instructions in the Enable Face and Face Attribute Recognition, Enable Vehicle and Vehicle Attribute Recognition, and Enable Body and Body Attribute Recognition sections.
+
+Do you want to configure detectors and features right now?(y/n)
+configure> y
+
+Q: Please select detectors to install:
+
+A: This question appears if you have requested installation and configuration of the object detection and object attribute recognition functions. In the multiple choice form, the face detector is selected by default. Enter a relevant number or a keyword to select an unpicked detector. For example, to add the body and vehicle detector to your configuration, enter 2 3. Enter done to proceed.
+
+Please select detectors to install:
+
+-  1 [v]  Face
+-  2 [ ]  Body
+-  3 [ ]  Car
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+detectors>2 3
+-  1 [v]  Face
+-  2 [v]  Body
+-  3 [v]  Car
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+detectors> done
+
+If you use keywords instead, select objects one by one: insert Body, press Enter, then insert Car, press Enter. Enter done to proceed.
+
+Q: Enable liveness and attempt to continue installation?(y/n)
+
+A: This question appears if you have requested installation and configuration of the object detection and object attribute recognition functions. To install the embedded face liveness detector, enter y. Enter n otherwise.
+
+Enable liveness and attempt to continue installation?(y/n)
+enable_liveness> y
+
+Q: Please select face features to install:
+
+A: This question appears if you have requested installation and configuration of the face detection and face attribute recognition functions. By default, all attributes but Eyes attrs are subject to installation. If some attribute is not necessary, you can enter the -keyword (or number) related to it. For example, enter 7 or -Headpose to exclude the recognition of the head position. Then enter done.
+
+Please select face features to install:
+
+-  1 [v]  Age
+-  2 [v]  Gender
+-  3 [v]  Emotions
+-  4 [v]  Beard
+-  5 [v]  Glasses
+-  6 [v]  Medical masks
+-  7 [v]  Headpose
+-  8 [ ]  Eyes attrs
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+face_features> 7
+-  1 [v]  Age
+-  2 [v]  Gender
+-  3 [v]  Emotions
+-  4 [v]  Beard
+-  5 [v]  Glasses
+-  6 [v]  Medical masks
+-  7 [ ]  Headpose
+-  8 [ ]  Eyes attrs
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+face_features> done
+
+Questions on body and vehicle attribute recognition will be analogous, with multiple choice forms depending on the requested detector type.
+
+Q: Please set findface-multi admin password
+
+A: Set the Super Administrator (superuser) password.
+
+Please set findface-multi admin password
+findface-multi-admin-password> admin
+
+Q: Do you want to install Analytics service?(y/n)
+
+A: By answering y you will install the service, which will process FindFace Multi data for further use in analytical purposes. The analytics works for line crossing only at the moment.
+
+Do you want to install Analytics service?(y/n)
+enable_analytics> y
+
+Q: Do you want to install Superset BI?(y/n)
+
+A: Installation of the external BI system allows you to view FindFace Multi data (currently available for the line crossing only) in the external system in the form of a graph. FindFace Multi serves as a data source, the external BI system helps visualize data. By answering y you choose to install the Apache Superset open-source software application. You will be able to log in to the system with the default credentials admin | admin; a password can further be changed in a system web-interface. If you prefer your own BI system, you can skip the suggested installation and answer n.
+
+Do you want to install Superset BI?(y/n)
+install_superset> y
+
+After the final question you will see a path to a JSON file with your answers:
+
+Your answers were saved to /tmp/findface-installer-t8qk_isw.json
+
+The installer will pull the FindFace Multi images from the Ntechlab registry and start the following services in Docker containers:
+
+Service
+
+Container
+
+Configuration
+
+pause
+
+findface-multi-pause-1
+
+Started
+
+nats-jetstream
+
+findface-multi-nats-jetstream-1
+
+Started
+
+mongodb
+
+findface-multi-mongodb-1
+
+Installed with Video Recorder. Started
+
+findface-ntls
+
+findface-multi-findface-ntls-1
+
+Started
+
+nats
+
+findface-multi-nats-1
+
+Started
+
+postgresql
+
+findface-multi-postgresql-1
+
+Healthy
+
+memcached
+
+findface-multi-memcached-1
+
+Started
+
+findface-upload
+
+findface-multi-findface-upload-1
+
+Started
+
+etcd
+
+findface-multi-etcd-1
+
+Started
+
+findface-sf-api
+
+findface-multi-findface-sf-api-1
+
+Started
+
+findface-extraction-api
+
+findface-multi-findface-extraction-api-1
+
+Started (CPU/GPU-acceleration)
+
+findface-tarantool-server-shard-*
+
+findface-multi-findface-tarantool-server-shard-*-1
+
+Started. The number of shards is calculated using the formula:
+N = min(max(min(mem_mb // 2000, cpu_cores), 1), 16 *
+cpu_cores). I.e., it is equal to the RAM size in MB divided
+by 2000, or the number of CPU physical cores (but at least one
+shard), or the number of CPU physical cores multiplied by 16,
+if the first obtained value is greater.
+
+findface-video-manager
+
+findface-multi-findface-video-manager-1
+
+Started
+
+findface-deduplicator
+
+findface-multi-findface-deduplicator-1
+
+Started
+
+findface-video-streamer
+
+findface-multi-findface-video-streamer-1
+
+Installed with Video Recorder. Started
+
+findface-video-storage
+
+findface-multi-findface-video-storage-1
+
+Installed with Video Recorder. Started
+
+pgbouncer
+
+findface-multi-pgbouncer-1
+
+Started
+
+findface-liveness-api
+
+findface-multi-findface-liveness-api-1
+
+Started
+
+findface-video-worker
+
+findface-multi-findface-video-worker-1
+
+Started (CPU/GPU-acceleration)
+
+findface-onvif-discovery
+
+findface-multi-findface-onvif-discovery-1
+
+Started
+
+findface-multi-audit
+
+findface-multi-findface-multi-audit-1
+
+Started
+
+findface-multi-identity-provider
+
+findface-multi-findface-multi-identity-provider-1
+
+Healthy
+
+findface-multi-legacy
+
+findface-multi-findface-multi-legacy-1
+
+Healthy
+
+findface-multi-ui
+
+findface-multi-findface-multi-ui-1
+
+Started
+
+findface-multi-line-crossing-analytics
+
+findface-multi-findface-multi-line-crossing-analytics-1
+
+Started
+
+redis
+
+findface-multi-redis-1
+
+Started
+
+rabbitmq
+
+findface-multi-rabbitmq-1
+
+Healthy
+
+timescaledb
+
+findface-multi-timescaledb-1
+
+Healthy
+
+backend_api
+
+findface-multi-backend_api-1
+
+Started
+
+service_notifier_ws
+
+findface-multi-service_notifier_ws-1
+
+Started
+
+service_notifier_tg
+
+findface-multi-service_notifier_tg-1
+
+Started
+
+backend_provider
+
+findface-multi-backend_provider-1
+
+Started
+
+service_alarmer
+
+findface-multi-service_alarmer-1
+
+Started
+
+superset-worker
+
+findface-multi-superset-worker-1
+
+Started
+
+superset-init
+
+findface-multi-superset-init-1
+
+Started
+
+superset-worker-beat
+
+findface-multi-superset-worker-beat-1
+
+Started
+
+superset
+
+findface-multi-superset-1
+
+Started
+
+alarm-web-app
+
+findface-multi-alarm-app-1
+
+Started
+
+findface-multi-file-mover
+
+findface-multi-findface-multi-file-mover-1
+
+Started
+
+findface-multi-healthcheck
+
+findface-multi-healthcheck-1
+
+Started
+
+findface-multi-legacy-singleton-services
+
+findface-multi-findface-multi-legacy-singleton-services-1
+
+Healthy
+
+findface-multi-identity-provider-migrate
+
+findface-multi-findface-multi-identity-provider-migrate-1
+
+Exited
+
+findface-multi-legacy-migrate
+
+findface-multi-findface-multi-legacy-migrate-1
+
+Exited
+
+findface-multi-alerts-migrate
+
+findface-multi-findface-multi-alerts-migrate-1
+
+Started
+
+findface-multi-alerts
+
+findface-multi-findface-multi-alerts-1
+
+Healthy
+
+cleaner-vms
+
+findface-multi-cleaner-vms-1
+
+Started
+
+cleaner
+
+findface-multi-cleaner-1
+
+Started
+
+After the installation is complete, the following output is shown in the console:
+
+Tip
+
+Be sure to save this data: you will need it later.
+
+#############################################################################
+#                       Installation is complete                            #
+#############################################################################
+- all configuration and data is stored in /opt/findface-multi
+- upload your license to http://192.168.0.90/#/license/
+- user interface: http://192.168.0.90/
+superuser:      admin
+documentation:  http://192.168.0.90/doc/
+- superset BI:  http://192.168.0.90:8088/
+2023/08/01 08:00:22 Installer finished
+
+Perform the post-deployment procedures.
+
+Tip
+
+To install the same configuration of FindFace Multi on a different host, use the automatic deployment from the installation file. In this case, you won’t have to answer the installation questions again. The exact path to a JSON file with answers is displayed right after the last question, before the installer starts active progress:
+
+[I 2023-08-01 07:56:36,323 main:142] Your answers were saved to /tmp/findface-installer-t8qk_isw.json
+
+Be sure to remove fields *.config, exp_ip, and int_ip before installing FindFace Multi on a host with a different IP address.
+
+To launch the automatic deployment from the /tmp/<findface-installer-*>.json file, execute:
+
+sudo ./<findface-*>.run -f /tmp/<findface-installer-*>.json
+
+Important
+
+The FindFace Multi services log a large amount of data, which can eventually lead to disc overload. To prevent this from happening, we advise you to disable rsyslog due to its suboptimal log rotation scheme and use the appropriately configured systemd-journal service instead. See Logging for the step-by-step instructions.
+
+          

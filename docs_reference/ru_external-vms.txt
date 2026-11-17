@@ -1,0 +1,313 @@
+
+
+# Внешние системы управления видео (VMS)
+
+На стороне FindFace Multi реализован механизм интеграции с внешними системами управления видео (VMS), позволяющий добавлять камеры из них в FindFace Multi и осуществлять их обработку. После добавления камеры из VMS для нее становятся доступны все действия, которые доступны для обычной камеры FindFace Multi.
+
+Интеграция с внешними VMS возможна через плагин. Взаимодействие между плагином и FindFace Multi осуществляется по HTTP. Плагин взаимодействует с VMS, FindFace Multi – с плагином.
+
+В этой главе:
+
+Создание сервисной учетной записи для плагина интеграции с VMS
+
+Включение плагина в FindFace Multi
+
+Создание новой базы данных в PostgreSQL
+
+Установка и настройка плагина для интеграции VMS с FindFace
+
+Добавление внешних VMS в FindFace Multi
+
+Этот раздел содержит пошаговое руководство по установке и настройке функции внешних VMS в FindFace Multi. Пользователь должен иметь большой опыт администрирования ОС Linux и контейнеров Docker.
+
+## Создание сервисной учетной записи для плагина интеграции с VMS
+
+Создайте пользователя (имя пользователя: ntech) с определенным набором разрешений, который будет использоваться в качестве сервисной учетной записи для плагина интеграции. Для этого выполните приведенную ниже команду:
+
+adduser --system --disabled-password --disabled-login --home /var/empty \
+                --no-create-home --quiet --force-badname --group ntech
+
+## Включение плагина в FindFace Multi
+
+Откройте файл /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py и найдите раздел External VMS Integration settings.
+
+Измените параметр 'ENABLED' на True.
+
+Запомните значение TOKEN, так как оно вам понадобится для настройки плагина позже. Значение по умолчанию – PLUGIN_TOKEN. Пожалуйста, обратите внимание, что префикс токена VmsPluginToken должен быть только в конфигурационном файле findface-multi-legacy.py.
+
+...
+# -- External VMS integration settings --
+   # cleanup settings
+   'EXTERNAL_VMS_EVENTS_MAX_AGE': 0,
+   'EXTERNAL_VMS_SEND_EVENTS_STATUS_MAX_AGE': 0,
+   'EXTERNAL_VMS': {
+       'ENABLED': True,
+       'PLUGIN_ADDRESS': 'http://127.0.0.1:18333',
+       'TOKEN': 'VmsPluginToken PLUGIN_TOKEN',
+       'EVENT_SENDER': {
+           'ENABLED': True,
+           'ALLOWED_TYPES': ['face'],
+           'SENDER_TASKS': 1,
+           'MAX_SEND_ATTEMPTS': 1,
+           'MIN_EVENT_SEND_TIMEOUT': 0.1,
+           'MAX_EVENT_SEND_TIMEOUT': 100,
+           'RESPONSE_TIMEOUT': 10,
+       },
+   },
+...
+
+Совет
+
+В нашем примере мы устанавливаем плагин на тот же хост, где развернут FindFace Multi. В случае использования отдельного компьютера, пожалуйста, укажите правильный адрес сервера, на котором находится плагин интеграции с VMS, в параметре PLUGIN_ADDRESS.
+
+Примечание
+
+Если вам нужно отправлять события на VMS, пожалуйста, также установите значение 'ENABLED': True в разделе EVENT_SENDER.
+
+Выполните перезапуск контейнеров FindFace Multi.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+Краткое описание параметров приведено ниже:
+
+Параметр
+
+Описание
+
+EXTERNAL_VMS_EVENTS_MAX_AGE
+
+Время хранения событий, полученных от VMS (дни). 0 – неограниченно.
+
+EXTERNAL_VMS_SEND_EVENTS_STATUS_AGE
+
+Время хранения событий, отправленных в VMS (дни). 0 – неограниченно.
+
+EXTERNAL_VMS: ENABLED
+
+Статус модуля интеграции VMS c FindFace. Если ENABLED, то в пользовательском интерфейсе появится опция “Внешние VMS”.
+
+PLUGIN_ADDRESS
+
+IP адрес плагина.
+
+TOKEN
+
+Токен, необходимый плагину интеграции с VMS для аутентификации в Findface Multi (должен соответствовать токену в файле конфигурации плагина).
+
+EVENT_SENDER:ENABLED
+
+Если True, все совпадающие события в Findface Multi будут отправлены во внешние VMS.
+
+ALLOWED_TYPES
+
+Типы отправляемых объектов. В настоящее время поддерживаются только объекты «Лица».
+
+SENDER_TASKS
+
+Количество одновременных задач для отправки событий в плагин. Значение по умолчанию = 1. При необходимости оно может быть увеличено. За дополнительной информацией обратитесь к нашим экспертам за консультацией (support@ntechlab.com).
+
+MAX_SEND_ATTEMPTS
+
+Количество попыток отправки до того, как она будет признана неудачной.
+
+MIN_EVENT_SEND_TIMEOUT
+MAX_EVENT_SEND_TIMEOUT
+
+Время между попытками отправки, если произошла неудачная отправка. Оно будет расти экспоненциально от минимума к максимуму до тех пор, пока увеличивается количество попыток MAX_SEND_ATTEMPTS.
+
+RESPONSE_TIMEOUT
+
+Время ожидания ответа от плагина при отправке события.
+
+## Создание новой базы данных в PostgreSQL
+
+Откройте файл /opt/findface-multi/docker-compose.yaml и запишите значение POSTGRES_PASSWORD. Оно понадобится для следующего шага.
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+...
+ postgresql:
+   environment: {POSTGRESQL_ALLOW_REMOTE_CONNECTIONS: 'no', POSTGRES_PASSWORD: POSTGRES_PASSWORD}
+...
+
+Войдите в контейнер findface-multi-postgresql-1, выполнив следующую команду:
+
+sudo docker exec -i findface-multi-postgresql-1 /bin/bash -c "PGPASSWORD={POSTGRES_PASSWORD} psql --username postgres"
+
+Чтобы убедиться, что вы успешно вошли в контейнер, используйте команду \l для просмотра списка баз данных:
+
+[img:wms_databases_en]
+
+Выполните следующую команду, чтобы создать новую базу данных, необходимую для работы VMS:
+
+CREATE DATABASE ffsintegration WITH OWNER ntech ;
+
+Подтвердите создание базы данных, снова выполнив команду \l. После завершения используйте параметр \q для выхода из PostgreSQL.
+
+[img:wms_exit_postgreSQL_en]
+
+## Установка и настройка плагина для интеграции VMS с FindFace
+
+Откройте файл /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py и найдите раздел DATABASES. Запомните значение PASSWORD для пользователя ntech:
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+...
+# camera groups, watchlists and so on. Only PostgreSQL is supported.
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'DISABLE_SERVER_SIDE_CURSORS': True,
+        'NAME': 'ffsecurity', 'HOST': '127.0.0.1', 'PORT': 5439, 'USER': 'ntech', 'PASSWORD': 'PASSWORD'
+    }
+}
+
+Запросите плагин findface-vms-integration-plugin.img у представителя компании NtechLab.
+
+Загрузите плагин в систему.
+
+docker load < findface-vms-integration-plugin.img
+
+Отредактируйте файл /opt/findface-multi/docker-compose.yaml, добавив в него секцию findface-vms-integration-plugin.
+
+cd /opt/findface-multi/
+
+sudo vi docker-compose.yaml
+
+Добавьте секцию findface-vms-integration-plugin в конец файла docker-compose.yaml.
+
+findface-vms-integration-plugin:
+  depends_on: [findface-ntls, postgresql, findface-multi-legacy]
+  image: findface-vms-integration-plugin:latest
+  network_mode: service:pause
+  volumes: ['./configs/findface-vms-integration-plugin/findface-vms-integration-plugin.conf:/etc/findface-vms-integration-plugin.conf']
+  restart: always
+
+Создайте конфигурационный файл для плагина.
+
+sudo mkdir configs/findface-vms-integration-plugin/
+sudo vi configs/findface-vms-integration-plugin/findface-vms-integration-plugin.conf
+
+Ниже приведен пример конфигурационного файла findface-vms-integration-plugin.conf.
+
+# URL prefix for API version 1 endpoints
+# Default: /api/v1
+#
+API_V1_STR: /v1
+
+# App listens on this interface. Set it to 0.0.0.0 to listen on all available interfaces
+# Default: 127.0.0.1
+#
+# HOST: 127.0.0.1
+
+# App accepts HTTP connections on this port
+# Default: 18333
+#
+# PORT: 18333
+
+# Public URL for App
+# Default: http://127.0.0.1:18333
+#
+# PUBLIC_URL: http://127.0.0.1:18333
+
+# Public URL for FFS
+# Default: http://127.0.0.1
+#
+# FFS_PUBLIC_URL: http://127.0.0.1:18333
+
+# Full database URL dialect+driver://username:password@host:port/database.
+# Alternatively, connection parameters can be specified one by one (see below).
+#
+# SQLALCHEMY_DATABASE_URI:
+
+# Database host
+#
+POSTGRES_SERVER: 127.0.0.1
+
+# Database port number
+#
+POSTGRES_PORT: 5432
+
+# Database user
+#
+POSTGRES_USER: ntech
+
+# Database user password
+#
+POSTGRES_PASSWORD: POSTGRES_PASSWORD
+
+# Database name
+#
+POSTGRES_DB: ffsintegration
+
+# Log SQL statements
+# Default: FALSE
+#
+# LOG_QUERIES: FALSE
+
+# Secret token used to validate requests made by FindFace Security
+# Required: yes
+#
+FFS_TOKEN: PLUGIN_TOKEN
+
+# Include traceback information in error responses
+# Default: FALSE
+#
+RESP_TRACEBACK: True
+
+# Logging level
+# Default: INFO
+#
+# LOG_LEVEL:
+
+# Enable journald log handler.
+# Default: TRUE
+#
+# LOG_TO_JOURNALD: TRUE
+
+# Timeout for requests to VMS
+# Default: 10
+#
+# VMS_REQUEST_TIMEOUT_SEC: 10
+
+# Timeout for requests to FindFace
+# Default: 10
+#
+# FF_REQUEST_TIMEOUT_SEC: 10
+
+Совет
+
+В нашем примере мы устанавливаем плагин на тот же хост, где развернут FindFace Multi. В случае использования отдельного компьютера, пожалуйста, укажите правильный адрес сервера FindFace Multi в параметре POSTGRES_SERVER, а URL – в параметре FFS_PUBLIC_URL.
+
+Если вы установили плагин на тот же хост, что и FindFace Multi, то вам нужно только добавить правильный логин и пароль для локальной базы данных PostgreSQL.
+
+POSTGRES_USER: ntech
+POSTGRES_PASSWORD: POSTGRES_PASSWORD
+
+Значение POSTGRES_PASSWORD можно получить из файла /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py.
+
+Для включения внешнего плагина VMS в FindFace Multi запустите все контейнеры FindFace Multi из директории /opt/findface-multi.
+
+sudo docker-compose up -d
+
+Откройте FindFace Multi в браузере. Вы увидите, что появился раздел Настройки -> Внешние VMS.
+
+Предупреждение
+
+Для корректного воспроизведения видеоархивов с внешних VMS необходимо установить на внешнем сервере VMS тот же часовой пояс, что и на сервере FindFace Multi.
+
+## Добавление внешних VMS в FindFace Multi
+
+В разделе Настройки -> Внешние VMS нажмите на кнопку Новая VMS.
+
+[img:wms_add_ru]
+
+Укажите параметры вашей VMS в открывшихся окнах и нажмите на кнопку Сохранить, как только все будет готово:
+
+[img:wms_info_ru]
+
+После завершения теперь вы можете управлять потоками со своих VMS  на вкладке Камеры. Например, вы можете мгновенно добавить все или выбранные камеры в FindFace Multi.
+
+[img:wms_cameras_ru]
+

@@ -1,0 +1,183 @@
+
+
+# Organize Events with Episodes
+
+This section is about the Episodes tab.
+
+See also
+
+Work with Events
+
+An episode is a set of identification events that feature objects of the same origin (face and body images of the same person and images of the same vehicle) detected within a specific period. As events on the Events tab show up in an arbitrary order, a large number of miscellaneous events can make the work difficult and unproductive. With the episodes, the system uses AI to organize incoming events based on the objects’ similarity and detection time. This allows for easy processing of diverse events, even in large numbers.
+
+In this chapter:
+
+About Episodes
+
+Grant Rights for Episodes
+
+View Episodes
+
+Event and Episode Acknowledging
+
+Episode Settings
+
+## About Episodes
+
+There are two stages of an episode lifecycle:
+
+LIVE: an episode is currently active, to which new events can be possibly added.
+
+Closed: an episode is closed, no events can be added.
+
+Episodes are classified as individual episodes and vehicle episodes. Individual episodes feature face and body images of people, detected within a specific period, while vehicle episodes contain vehicle images and license plate.
+
+## Grant Rights for Episodes
+
+A user receives a notification of a new episode if they have rights to the first event. Viewing new events in the episode also requires proper rights.
+
+The right to an event consists of the rights for a corresponding camera and watch list.
+
+Note
+
+To see unmatched events, you only need the rights to a camera.
+
+To manage the rights of a role for the entire Episode entity, open permissions for this role and adjust the following permissions:
+
+humanepisode: individuals episodes
+
+carepisode: vehicle episodes
+
+Tip
+
+See Role and User Management.
+
+[img:episode_permissions_en]
+
+## View Episodes
+
+You can find the list of episodes with filters and statistics on the Episodes & Events -> Episodes tab. Episodes are sorted subject to the object’s origin: there are individual episodes and vehicle episodes.
+
+Once an object is detected, it is either added to an existing LIVE episode or used as a starting point for a new episode. Each episode is assigned an identifier which can be later used to filter events and episodes.
+
+[img:episodes_en]
+
+When working with the episodes, the following default filters may come in handy:
+
+Note
+
+Some filters from the list below may be hidden, subject to enabled recognition features.
+
+Filters for individuals and vehicles
+
+Individuals type: display events only for faces or bodies.
+
+Matches: faces: display episodes only with/without face matches, or all episodes.
+
+Matches: bodies: display episodes only with/without body matches, or all episodes.
+
+Matches: display episodes only with/without vehicle matches, or all episodes.
+
+Watch lists: display episodes only for a selected watch list.
+
+Acknowledged: display only acknowledged/unacknowledged episodes, or all episodes.
+
+Camera groups: display only episodes from a selected group of cameras.
+
+Cameras: display only episodes from a selected camera.
+
+Date and time: display only episodes that occurred within a certain period.
+
+Video archive ID: display episodes related to the video archive with a given ID.
+
+Record name: display only episodes with a given record name.
+
+Episode ID: display an episode with a given ID.
+
+Counts events: display only episodes with a given number of events.
+
+Specific filters for faces
+
+Age: display episodes with people of a given age.
+
+Gender: display episodes with people of a given gender.
+
+Beard: filter episodes by the fact of having a beard.
+
+Eyes: filter episodes based on whether the eyes are open or closed or if they are blocked by an object.
+
+Glasses: filter episodes by the fact of wearing glasses.
+
+Emotions: display episodes with given emotions.
+
+Liveness: filter episodes by face liveness.
+
+Face mask: filter episodes by the fact of wearing a face mask.
+
+Specific filters for bodies
+
+Gender by body: display episodes with a body of a given gender.
+
+Age by body: display episodes with a body of a given age.
+
+Headwear: display only episodes with a person wearing headgear of a given type: hat/cap, hood/scarf, none.
+
+Vest: display only episodes with a person wearing a vest of a given color.
+
+Helmet: display only episodes with a person wearing a helmet of a given color.
+
+Upper clothes color: display only episodes with a person wearing a top of a given color.
+
+Lower clothes color: display only episodes with a person wearing a bottom of a given color.
+
+Upper clothes type: display only episodes with a person wearing upper body wear of a given specific type: jacket, coat, sleeveless, sweatshirt, T-shirt, shirt, dress.
+
+Lower body clothes: display only episodes with a person wearing lower body wear of a given type: pants, nondescript, skirt, shorts.
+
+Upper body clothes: display only episodes with a person wearing upper body wear of a given generalized category: long sleeves, short sleeves, no sleeve.
+
+Bag on the back: display only episodes with a person wearing/not wearing a bag on the back.
+
+Bag in hand: display only episodes with a person wearing/not wearing a bag in hand.
+
+Fall: display episodes by the fact a person falls.
+
+Smoking: display episodes with smoking people.
+
+Use the phone: display episodes with people using their phone.
+
+Call on the phone: display episodes with people calling on the phone.
+
+Specific filters for vehicle episodes
+
+Make: filter vehicle episodes by vehicle make.
+
+Model: filter vehicle episodes by vehicle model.
+
+Vehicle body type: display only episodes with vehicles of a given body type: minivan, limousine.
+
+Vehicle body color: display only episodes with vehicles of a given color.
+
+Country: display only episodes with vehicles registered in a given country.
+
+License plate number: display an episode with a given plate number.
+
+Region: display only episodes with vehicles registered in a given region.
+
+License plate color: display only episodes with a given license plate color.
+
+Special vehicle: display only episodes with vehicles belonging to a given type: taxi, public road transport, carsharing, ambulance, police, fire service and emergencies ministry vehicles, gas rescue and emergency services, military, municipal vehicles, other or not special.
+
+Vehicle category: display only episodes with vehicles belonging to a given category: motorcycle, scooter, car, car with a trailer, truck, truck with a trailer, bus, articulated bus, other.
+
+Vehicle weight and body size: display only episodes with vehicles of a given weight and body size.
+
+Note
+
+License plate region is predicted for the United Arab Emirates (UAE) and Thailand. License plate color is predicted for Saudi Arabia only. The values of these attributes will be marked as unknown for other countries.
+
+To view episode events, click the episode on the list. You will be redirected to the Matched Episode or Unmatched Episode tab with the episode information and related events.
+
+[img:episodes_events_en]
+
+Work with the Events tab as described in Work with Events.

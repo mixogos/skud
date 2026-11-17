@@ -1,0 +1,59 @@
+
+
+# Cameras
+
+## Create a new camera
+
+To add a new camera, use this method:
+
+POST /cameras/
+
+The REQUEST BODY contains application/json object with the following required parameters:
+
+Name
+
+Schema
+
+Description
+
+group*
+
+integer
+
+Camera group.
+
+name*
+
+string
+
+Camera name. Constraints: 1 to 256 chars.
+
+The other parameters you can see at http://<findface-ip:port>/api-docs.
+
+You may send the request with these parameters substituting with your values:
+
+Request example
+
+{
+ "group": 1,
+ "active": false,
+ "name": "Camera_name",
+ "comment": "AAAAAA",
+ "url": "url"
+}
+
+CURL example
+
+curl -X POST "http://<findface-ip:port>/cameras/" \
+ -H "Accept: application/json" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Token <token>" \
+ -H "Content-Type: application/json" \
+ -d '{"group":1,"active":false,"name":"Camera_name","comment":"AAAAAA","url":"url"}' \
+
+Returns
+
+Created: 201 – if success.
+
+          

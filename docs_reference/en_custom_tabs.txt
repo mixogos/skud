@@ -1,0 +1,143 @@
+
+
+# Custom Tabs, Fields, and Filters in Record Index
+
+See also
+
+To create custom fields in the feature vector database, refer to Custom Metadata in Tarantool.
+
+To add custom tabs and fields to the records of individuals and vehicles, do the following:
+
+Prepare the list of custom tabs and fields you want to add to the records.
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+Customize the records of individuals. To do so, uncomment the  FFSECURITY -> CUSTOM_FIELDS -> human_card section and modify the exemplary content, considering the following:
+
+'items': the list of fields in a record. Describe each field with the following parameters:
+
+'name': field’s internal name, string.
+
+'default': field’s default value. If a default value exceeds 1e14 - 1 , use a string data type to specify it, for example, "123123.." instead of 123123...
+
+'label': field’s label in a record, string.
+
+'tab': tab that features the field.
+
+'display': display format (form or list), string or array.
+
+'description': field’s description, string.
+
+'editable': field’s editability, boolean.
+
+'type': field data type, string. Possible values:
+
+list: requires items, additional parameter for lists (see below), expects objects {id, name} in dictionaries;
+
+valuelist: expects elements of primitive types.
+
+objectlist: allows for creating arrays of objects of required types.
+
+datetime: primitive data type displayed as a datetime list.
+
+date: primitive data type displayed as a date picker.
+
+boolean: primitive data type displayed as a checkbox.
+
+string: primitive data type string.
+
+additional parameters for lists (type=list, type=valuelist):
+
+multiple: possibility of selecting several items in the list, boolean.
+
+items: dictionary used as a data source for the list.
+
+allow_create:  possibility of adding new items to the list.
+
+custom_id: custom field for id (type=list).
+
+additional parameters for object lists (type=objectlist).
+
+object: objects used as a data source for the object list.
+
+simple: indicator that the field expects data of a primitive type instead of objects, for example, expects strings with phone numbers.
+
+'filters': the list of search filters associated with the custom fields. Parameters:
+
+'name': filter’s internal name,
+
+'label': filter’s label in the web interface,
+
+'field': associated field in the format [field name].
+
+'tabs': the list of tabs in a record.
+
+FFSECURITY = {
+
+...
+
+# -- Custom model fields --
+# Edit CUSTOM_FIELDS -> `human_card` section to customize human card fields.
+# Edit CUSTOM_FIELDS -> `car_card` section to customize car card fields.
+...
+  'CUSTOM_FIELDS': {
+      'human_card': {
+          'items': [
+              {
+                  'name': 'personid',
+                  'default': '',
+                  'label': 'PersonID',
+                  'display': ['list', 'form'],
+                  'description': 'Sigur person ID',
+                  'editable': False
+              },
+              {
+                  'name': 'firstname',
+                  'default': '',
+                  'label': 'First Name',
+                  'display': ['list', 'form'],
+                  'description': 'Sigur first name',
+                  'editable': False
+              },
+              {
+                  'name': 'lastname',
+                  'default': '',
+                  'label': 'Last Name',
+                  'display': ['list', 'form'],
+                  'description': 'Sigur last name',
+                  'editable': False
+              },
+              {
+                  'name': 'version',
+                  'default': '',
+                  'label': 'Version',
+                  'display': ['list', 'form'],
+                  'description': 'Sigur photo version',
+                  'editable': False
+              }
+          ],
+          'filters': [
+              {
+                  'name': 'personid',
+                  'label': 'Sigur person ID filter',
+                  'field': 'personid'
+              }
+          ]
+      },
+      'car_card': {}, # same fields are available
+  },
+}
+
+Customize the vehicle records. To do so, duplicate the human_card section content into the car_card section and modify it by analogy.
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+You will see the custom content appear in the records.
+
+          

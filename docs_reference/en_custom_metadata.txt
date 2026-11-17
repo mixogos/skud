@@ -1,0 +1,138 @@
+
+
+# Custom Metadata in Tarantool
+
+It is often necessary to assign additional metadata to the objects extracted from images uploaded to the record index and now stored in the feature vector database.
+
+In this section:
+
+Customize Meta Fields of Face Objects
+
+Customize Meta Fields of Body and Vehicle Objects
+
+## Customize Meta Fields of Face Objects
+
+To assign custom meta fields to the face objects, do the following:
+
+Prepare the list of custom meta fields to assign.
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+In the FFSECURITY section, uncomment the CUSTOM_FIELDS -> face_object section and modify the exemplary content, considering the following:
+
+field_name: field’s name;
+
+type: data type (uint, string or bool);
+
+default: field’s default value. If a default value exceeds ‘1e14 – 1’, use a string data type to specify it, for example, "123123.." instead of 123123...
+
+FFSECURITY = {
+
+...
+
+    # -- Custom model fields --
+    ...
+    # Edit CUSTOM_FIELDS -> `face_object` section to customize face object fields.
+    ...
+    # 'CUSTOM_FIELDS': {
+          ...
+          'face_object': {
+              'items': [
+                  {
+                      "field_name": "tag_name_1",
+                      "type": "string",
+                      "default": "change_me"
+                  },
+                  {
+                      "field_name": "tag_name_2",
+                      "type": "uint",
+                      "default": 123
+                  },
+                  {
+                      "field_name": "tag_name_3",
+                      "type": "bool",
+                      "default": True
+                  },
+              ]
+          }
+      },
+}
+
+Add the new meta fields to the feature vector database structure.
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+You can work with the new meta fields through HTTP API using the objects/faces/ methods.
+
+## Customize Meta Fields of Body and Vehicle Objects
+
+Assigning custom meta fields to the body and vehicle objects are similar to the faces. The only difference is that you will need to manually create the CUSTOM_FIELDS -> body_object and CUSTOM_FIELDS -> car_object sections. It is a good idea to duplicate the CUSTOM_FIELDS -> face_object section and use it as a starting point for further modifications.
+
+FFSECURITY = {
+
+...
+
+    # -- Custom model fields --
+    ...
+    # Edit CUSTOM_FIELDS -> `face_object` section to customize face object fields.
+    ...
+    # 'CUSTOM_FIELDS': {
+          ...
+          'body_object': {
+              'items': [
+                  {
+                      "field_name": "tag_name_1",
+                      "type": "string",
+                      "default": "change_me"
+                  },
+                  {
+                      "field_name": "tag_name_2",
+                      "type": "uint",
+                      "default": 123
+                  },
+                  {
+                      "field_name": "tag_name_3",
+                      "type": "bool",
+                      "default": True
+                  },
+              ]
+          }
+          'car_object': {
+              'items': [
+                  {
+                      "field_name": "tag_name_1",
+                      "type": "string",
+                      "default": "change_me"
+                  },
+                  {
+                      "field_name": "tag_name_2",
+                      "type": "uint",
+                      "default": 123
+                  },
+                  {
+                      "field_name": "tag_name_3",
+                      "type": "bool",
+                      "default": True
+                  },
+              ]
+          }
+      },
+}
+
+Similarly, you can work with the new meta fields using the objects/bodies/ and objects/cars/ methods of HTTP API.
+
+Note
+
+Assigning custom meta fields to the face, body and vehicle events are similar to the face, body and vehicle objects. You will also need to manually create the CUSTOM_FIELDS -> face_event, CUSTOM_FIELDS -> body_event and CUSTOM_FIELDS -> car_event sections by similar way.
+
+See also
+
+To create custom tabs, fields, and filters in cards, refer to Custom Tabs, Fields, and Filters in Record Index.
+
+          

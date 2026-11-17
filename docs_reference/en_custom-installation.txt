@@ -1,0 +1,328 @@
+
+
+# Fully Customized Installation
+
+The FindFace Multi developer-friendly installer provides you with a few installation options, including the fully customized installation. This option is mostly used when deploying FindFace Multi in a highly distributed environment and requires a high level of knowledge and experience.
+
+To initiate the fully customized installation, do the following:
+
+Download the installer file findface-*.run.
+
+Put the .run file into some directory on the designated host (for example, /home/username).
+
+From this directory, make the .run file executable.
+
+Note
+
+Be sure to specify the actual file name instead of findface-*.
+
+chmod +x findface-*.run
+
+Execute the .run file.
+
+sudo ./findface-*.run
+
+The installer will ask you a few questions and perform several automated checks to ensure that the host meets the system requirements. After filling out each prompt, press Enter. The questions and answers are the following:
+
+Q: Which product should be installed?
+
+A: 1
+
+Which product should be installed?
+
+  1. [multi   ]  FindFace Multi
+  2. [server  ]  FindFace Server
+  3. [video-worker]  FindFace Video Worker
+
+(default: multi)
+product> 1
+
+Q: Please choose installation type:
+
+A: 4
+
+Please choose installation type:
+
+-  1 [stand-alone ]  Single Server
+-  2 [multi-worker]  Single Server, Multiple video workers
+-  3 [images      ]  Don't configure or start anything, just load the images and copy the models
+-  4 [custom      ]  Fully customized installation
+
+(default: stand-alone)
+type> 4
+
+Q: Directory to install into:
+
+A: Specify the FindFace Multi installation directory. The default suggestion is /opt/findface-multi. Press Enter to confirm it. Otherwise, specify the directory of your choice and press Enter.
+
+Directory to install into:
+(default: /opt/findface-multi)
+dest_dir>
+
+Q: Please enter path to docker-compose binary:
+
+A: Specify the actual path to the docker-compose binary. The default suggestion is /usr/local/bin/docker-compose and it is the path you get when you install docker-compose as described in this section. Press Enter to confirm it. Otherwise, specify another path and press Enter.
+
+Please enter path to docker-compose binary
+(default: /usr/local/bin/docker-compose)
+docker_compose>
+
+Q: Found X interface(s). Which one should we announce as our external address?
+
+A: Choose the interface that you are going to use as the instance IP address.
+
+Found 3 interface(s). Which one should we announce as our external address?
+
+-  1 [lo      ]  127.0.0.1
+-  2 [ens3    ]  192.168.112.254
+-  3 [docker0 ]  10.44.132.1
+
+(default: 192.168.112.254)
+ext_ip.advertised> 2
+
+Q: Found X interface(s). Which one should we announce as our inter-service communication address?
+
+A: Choose the interface for inter-service communication.
+
+Found 3 interface(s). Which one should we announce as our inter-service communication address?
+
+-  1 [lo      ]  127.0.0.1
+-  2 [ens3    ]  192.168.112.254
+-  3 [docker0 ]  10.44.132.1
+
+(default: 192.168.112.254)
+inter_ip.advertised> 2
+
+Q: Please select FindFace Multi components to install:
+
+A: Choose FindFace components to install. By default, all components are subject to installation. You can leave it as is by entering done, or select specific components. Whenever you have to make a selection, first, deselect all the listed components by entering -* in the command line, then select required components by entering their sequence number (keyword), for example: 1 7 13, etc. Enter done to save your selection and proceed to another step.
+
+Warning
+
+We do not recommend excluding the pause component from installation, as this will leave the remaining components without a network namespace to attach to.
+
+If you exclude the pause component intentionally, make sure to edit the /opt/findface-multi/docker-compose.yaml file and provide a host name for each service in the network_mode parameter.
+
+Please select FindFace Multi components to install:
+
+-  1 [v]  findface-data        - Recognition models
+...
+...
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+components> done
+
+Find the full list of components and their descriptions in the Components to Install section.
+
+Specific questions related to the selected components: acceleration type, the required number of component instances, neural network models, etc. If you are experiencing a difficulty answering them, refer to the section Components to Install or try to find an answer in this documentation.
+
+Q: Please set findface-multi admin password
+
+A: Set the Super Administrator (superuser) password.
+
+Please set findface-multi admin password
+findface-multi-admin-password> admin
+
+The installer will pull the FindFace Multi images from the Ntechlab registry and start the associated services in Docker containers.
+
+Perform the post-deployment procedures.
+
+Tip
+
+To install the same configuration of FindFace Multi on a different host, use the automatic deployment from the installation file. In this case, you won’t have to answer the installation questions again. The exact path to the installation file is displayed right after the last question, before the installer starts active progress:
+
+[I 2023-02-09 11:13:37,187 main:142] Your answers were saved to /tmp/findface-installer-p01n9sn3.json
+
+Be sure to remove fields *.config, exp_ip, and int_ip before installing FindFace Multi on a host with a different IP address.
+
+To launch the automatic deployment from the /tmp/<findface-installer-*>.json file, execute:
+
+sudo ./<findface-*>.run -f /tmp/<findface-installer-*>.json
+
+## Components to Install
+
+Explore the full list of components during custom installation, as well as their descriptions.
+
+Please select FindFace Multi components to install:
+
+-  1 [v]  findface-data        - Recognition models
+-  2 [v]  pause                - Pause container that hosts network namespace
+-  3 [v]  memcached            - (third-party) Memcached server
+-  4 [v]  etcd                 - (third-party) etcd server
+-  5 [v]  postgresql           - (third-party) PostgreSQL server
+-  6 [v]  redis                - (third-party) Redis server
+-  7 [v]  pgbouncer            - (third-party) Connection pooler for PostgreSQL
+-  8 [v]  nats                 - (third-party) NATS Server
+-  9 [v]  nats-jetstream       - (third-party) NATS Server with JetStream enabled
+- 10 [v]  timescaledb          - (third-party) TimescaleDB server
+- 11 [v]  findface-ntls        - FindFace License Server - one instance of this service needs to be installed
+- 12 [v]  findface-extraction-api - FindFace Extraction API - detection and recognition API
+- 13 [v]  findface-sf-api      - Simple Face API - main HTTP API of FindFace Server
+- 14 [v]  findface-deduplicator - Deduplicator - simple deduplicator HTTP API
+- 15 [v]  findface-liveness-api - Face Liveness API - video liveness detection service.
+- 16 [v]  findface-upload      - FindFace Upload - WebDAV configuration for NginX
+- 17 [v]  findface-video-manager - FindFace Video Manager - Jobs scheduler and management API for video processing
+- 18 [v]  findface-video-worker - FindFace Video Worker - Realtime detector for video files and streams
+- 19 [v]  findface-multi-line-crossing-analytics - FindFace Multi line crossing analytics service
+- 20 [v]  findface-multi-identity-provider - FindFace Multi identity provider service
+- 21 [v]  findface-multi-audit - FindFace Multi audit service
+- 22 [v]  findface-multi-legacy - FindFace Multi
+- 23 [v]  findface-multi-ui    - FindFace Multi ui service
+- 24 [v]  findface-tarantool-server - FindFace TNT API - storage and search service
+- 25 [v]  mongodb              - (third-party) MongoDB database
+- 26 [v]  findface-video-storage - FindFace Video Storage - a service for storing video chunks
+- 27 [v]  findface-video-streamer - FindFace Video Streamer - service for streaming archived videos
+- 28 [v]  superset             - (third party) superset BI with our init
+- 29 [v]  rabbitmq             - (third-party) RabbitMQ server
+- 30 [v]  findface-annex       - FindFace Annex
+- 31 [v]  alarm-app            - Alarm App
+- 32 [v]  findface-multi-file-mover - FindFace Multi file mover service
+- 33 [v]  healthcheck          - Container that waits until multi is ready
+- 34 [v]  findface-multi-alerts - FindFace Multi alerts service
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+components> done
+
+Component
+
+Description
+
+findface-data
+
+The component installs neural network models. Select the required models from the list. You will also need to edit the findface-extraction-api.yaml and findface-video-worker.yaml configuration files accordingly. At least one of the neural network models has to be enabled.
+
+pause
+
+An internal service. The component installs the findface-multi-pause-1 container, which keeps the network namespace for other components. The pause component usually shouldn’t be disabled, as this will leave remaining components without a network namespace to attach to. If you exclude the pause component intentionally, make sure to edit the docker-compose.yaml file and provide a host name for each service in the network_mode parameter.
+
+memcached
+
+The component installs the findface-multi-memcached-1 container. Memcached is a third-party software that implements a distributed memory caching system. Used by the findface-sf-api service as a temporary storage for extracted object feature vectors before they are written to the feature vector database powered by Tarantool.
+
+etcd
+
+The component installs the findface-multi-etcd-1 container. This is a third-party software that as part of FindFace core implements a distributed key-value store for findface-video-manager. Used as a coordination service in the distributed system, providing the video object detector with fault tolerance. In FindFace Multi, the software implements locks in the findface-multi-legacy service, e.g., locks in license checker, reports, video processing, object clusterization, etc.
+
+postgresql
+
+The component installs the findface-multi-postgresql-1 container. PostgreSQL is a third-party software that implements the main system database. This database stores records of persons and vehicles and data for internal use, including user accounts and camera settings. The object feature vectors and object identification events are stored in Tarantool (part of the FindFace core).
+
+redis
+
+The component installs the findface-multi-redis-1 container. Redis is a third-party in-memory database that can be used by the findface-sf-api service as a temporary storage for extracted object feature vectors before they are written to the feature vector storage.
+
+pgbouncer
+
+The component installs the findface-multi-pgbouncer-1 container. Pgbouncer is a third-party software, a lightweight connection pooler for PostgreSQL. Optional, used to increase the database performance under high load.
+
+nats
+
+The component installs the findface-multi-nats-1 container. NATS is a third-party software that implements a message broker in findface-multi-legacy.
+
+nats-jetstream
+
+The component installs the findface-multi-nats-jetstream-1 container. NATS with JetStream is a third-party software. Both nats and nats-jetstream perform the same function with the difference in message delivery guarantee. nats-jetstream has a higher message delivery guarantee and, compared to nats, does not lose messages even if the system or user is unreachable. nats-jestream is used where message loss is unacceptable. nats and nats-jestream are not interchangeable, and both are needed for the system functioning.
+
+timescaledb
+
+The component installs the findface-multi-timescaledb-1 container. TimescaleDB is a third-party software. It’s an open-source time series database that extends PostgreSQL. A required component if you install findface-multi-line-crossing-analytics or findface-annex.
+
+findface-ntls
+
+An internal service. The component installs the findface-multi-findface-ntls-1 container. This is the license server that interfaces with the NtechLab Global License Server, a USB dongle, or hardware fingerprint to verify the license of your FindFace Multi instance. Read more about the findface-ntls service.
+
+findface-extraction-api
+
+The component installs the findface-multi-findface-extraction-api-1 container. This is an internal service that uses neural networks to detect an object in an image and extract its feature vector. It also recognizes object attributes (for example, gender, age, emotions, beard, eyes state, glasses, face mask, head position — for face objects). CPU- or GPU-acceleration. Read more about the findface-extraction-api service.
+
+findface-sf-api
+
+The component installs the findface-multi-findface-sf-api-1 container. This is an internal service that implements the internal HTTP API for object detection and recognition. Read more about the findface-sf-api service.
+
+findface-deduplicator
+
+The component installs the findface-multi-findface-deduplicator-1 container. This is an internal service that compares feature vectors; it is used for deduplication of episodes and cluster events.
+
+findface-liveness-api
+
+The component installs the findface-multi-findface-liveness-api-1 container. This is an internal service. Besides the embedded functionality provided by findface-video-worker, face liveness detection can also be harnessed as a standalone service findface-liveness-api. The service takes a specific number of frames from a video chunk and returns the best quality face, and decimal liveness result averaged across the taken frames. The service is also involved in the course of user authentication by face.
+
+findface-upload
+
+An internal service. The component installs the findface-multi-findface-upload-1 container. This is a NginX-based web server used as a storage for original images, thumbnails, and normalized object images. If a Video Recorder is installed, findface-upload also stores video data from cameras. Read more about the findface-upload service.
+
+findface-video-manager
+
+The component installs the findface-multi-findface-video-manager-1 container. This is an internal service, part of the video object detection module, that is used for managing the video object detection functionality, configuring the video object detector settings and specifying the list of to-be-processed video streams. Read more about the findface-video-manager service.
+
+findface-video-worker
+
+The component installs the findface-multi-findface-video-worker-1 container. This is an internal service, part of the video object detection module, that recognizes an object in the video and posts its normalized image, full frame and metadata (such as detection time) to the findface-legacy service for further processing according to given directives. If a Video Recorder is enabled, findface-video-worker sends video over to findface-video-storage. Provides face liveness detection if enabled. CPU- or GPU-acceleration. Read more about the findface-video-worker service.
+
+findface-multi-line-crossing-analytics
+
+The component installs the findface-multi-findface-multi-line-crossing-analytics-1 container. This is an internal service that processes FindFace Multi data for further use in analytical purposes. The analytics works for line crossing only at the moment. If you want to use the analytical BI service, install findface-multi-line-crossing-analytics along with timescaledb and any BI system (your own or provided here as a superset component).
+
+findface-multi-identity-provider
+
+The component installs the findface-multi-findface-multi-identity-provider-1 and findface-multi-findface-multi-identity-provider-migrate-1 containers. This is an internal service for authentication, user management, and management of role-based model of accesses.
+
+findface-multi-audit
+
+The component installs the findface-multi-findface-multi-audit-1 container. This is an internal service that is created for the future. It will become full-fledged in the upcoming versions. As for now, it partly duplicates the findface-multi-legacy functionality.
+
+findface-multi-legacy
+
+The component installs the findface-multi-findface-multi-legacy-1, findface-multi-findface-onvif-discovery-1, findface-multi-findface-multi-legacy-migrate-1, findface-multi-findface-multi-legacy-singleton-services-1, findface-multi-cleaner-1, findface-multi-cleaner-vms-1 containers. This is an internal service that serves as a gateway to the FindFace core. It provides interaction between the FindFace core and the web interface, the system functioning as a whole. Read more about the findface-multi-legacy service.
+
+findface-multi-ui
+
+An internal service. The component installs the findface-multi-findface-multi-ui-1 container. This is the main web interface used to interact with FindFace Multi. Based on the Django framework. Allows you to work with object recognition events, search for objects, manage cameras, users, records, watch lists, collect real-time statistics, and much more.
+
+findface-tarantool-server
+
+The component installs the findface-multi-findface-tarantool-server-shard-*-1 containers. This is an internal service that provides interaction between the findface-sf-api service and the feature vector database (the Tarantool-powered database that stores object feature vectors). The number of shards is calculated using the formula: N = min(max(min(mem_mb // 2000, cpu_cores), 1), 16 * cpu_cores). I.e., it is equal to the RAM size in MB divided by 2000, or the number of CPU physical cores (but at least one shard), or the number of CPU physical cores multiplied by 16, if the first obtained value is greater. The default number of shards to install is 8. Read more about the findface-tarantool-server service.
+
+mongodb
+
+The component installs the findface-multi-mongodb-1 container. A third-party software that implements the Video Recorder database. The database stores meta-information of the video chunks, including their location. The video chunks themselves are stored in the findface-upload service. If you need a Video Recorder, install mongodb along with the findface-video-storage and findface-video-streamer components.
+
+findface-video-storage
+
+The component installs the findface-multi-findface-video-storage-1 container. An internal service that implements video chunk management. It takes video chunks from the findface-video-worker service, puts them into the storage (findface-upload), and writes their meta-information and whereabouts to the Video Recorder database (MongoDB). By request from findface-multi-legacy, it issues info about existing video chunks in the form of Websocket-links to the corresponding streams. These links are further used by findface-video-streamer to deliver the video to a user for viewing and downloading. If you need a Video Recorder, install findface-video-storage along with the mongodb and findface-video-streamer components.
+
+findface-video-streamer
+
+The component installs the findface-multi-findface-video-streamer-1 container. This is an internal service. After receiving a findface-multi-ui request, this service uses Websocket to extract requested video chunks from findface-video-storage and findface-video-worker (only the last chunk if it’s not yet recorded to the storage). Then it merges the video chunks into a one-piece video and delivers it to a user for viewing and downloading. If you need a Video Recorder, install findface-video-streamer along with the findface-video-storage and mongodb components.
+
+superset
+
+The component installs the findface-multi-superset-worker-1, findface-multi-superset-init-1, findface-multi-superset-worker-beat-1, findface-multi-superset-1 containers. This is a third-party open-source software application — Apache Superset. You will need to install this component along with the findface-multi-line-crossing-analytics and timescaledb components if you want to employ the analytical BI service. Or you may use your own BI system. Read more about the Analytical BI Service.
+
+rabbitmq
+
+The component installs the findface-multi-rabbitmq-1 container. RabbitMQ is a third-party open-source message-broker software. You will need to install this component if you installed findface-annex.
+
+findface-annex
+
+The component installs the findface-multi-backend_provider-1, findface-multi-service_notifier_ws-1, findface-multi-service_alarmer-1, findface-multi-service_notifier_tg-1, findface-multi-backend_api-1 containers. This is a software platform that provides video analytics tools (NtechLab own deployment). You will need Annex to employ Alarm Monitor and Alarm Feed. The installation of the findface-annex component also requires the installation of timescaledb and rabbitmq. Read more about Annex.
+
+alarm-app
+
+The component installs the findface-multi-alarm-app-1 container. This is a web interface for the alarm monitoring service.
+
+findface-multi-file-mover
+
+The component installs the findface-multi-findface-multi-file-mover-1 container. This is an internal file moving service that is used for tiered data storage. The service transfers images from the short-term storage to the long-term storage. Read more about Tiered Data Storage.
+
+healthcheck
+
+The component installs the findface-multi-healthcheck-1 container. This is an internal service that checks container’s health on startup. Expects the containers to be “healthy” before starting a UI.
+
+findface-multi-alerts
+
+The component installs the findface-multi-findface-multi-alerts-1 and findface-multi-findface-multi-alerts-migrate-1 containers. This is an internal service that is responsible for the alert creation and functioning. Read more about the alerting service.
+
+          

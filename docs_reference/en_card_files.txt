@@ -1,0 +1,44 @@
+
+
+# Allowed File Extensions in Records
+
+By default, you can attach a file of any extension to a record. It is possible to strengthen your system safety by creating the allowlist of file extensions. It will prevent your users from uploading files of unwanted formats, including those that might contain hidden malicious code, such as .js, .swf, and such.
+
+To create the allowlist of file extensions, do the following:
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+In the FFSECURITY section, find the CARD_ATTACHMENTS_FILENAME_REGEXP parameter. Set an expression with the allowed file extensions. Any valid Python regular expression will do.
+
+Examples:
+
+r'.*\.png': allows only files with the .png extension
+
+r'.*\(png|jpg)': allows the .png and .jpg extensions
+
+r'.*': allows all file extensions
+
+None: allows all file extensions
+
+'XXXXXX': uploading files of any extension is prohibited
+
+FFSECURITY = {
+   ...
+   'CARD_ATTACHMENTS_FILENAME_REGEXP': r'.*\.txt',
+   ...
+
+   }
+
+Tip
+
+Commenting out the CARD_ATTACHMENTS_FILENAME_REGEXP parameter also allows all file extensions.
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+          

@@ -1,0 +1,390 @@
+
+
+# Enable Data Encryption
+
+To ensure data security, we recommend enabling SSL encryption. Do the following:
+
+On the host system, create the nginx configuration directory with the subdirectory that will be used to store all the SSL data:
+
+sudo mkdir -p /etc/nginx/ssl/
+
+Create the SSL key and certificate files. When using self-signed certificate, use the following command:
+
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/ssl/my-example-domain.com.key -out /etc/nginx/ssl/my-example-domain.com.crt
+
+You will be asked a few questions about your server in order to embed the information correctly in the certificate. Fill out the prompts appropriately. The most important line is the one that requests the Common Name. You need to enter the domain name or public IP address that you want to be associated with your server. Both of the files you created (my-example-domain.com.key and my-example-domain.com.crt) will be placed in the /etc/nginx/ssl/ directory.
+
+When using CA-certificate, add the certificate path to volumes for the findface-video-worker service, add the CA-certificates installation and update the root certificate store in the service container.
+
+Open the docker-compose.yaml file:
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+
+Locate the findface-video-worker section and adjust it to make sure it looks as follows.
+
+For CPU:
+
+findface-video-worker:
+    entrypoint: ["sh", "-c", "update-ca-certificates && exec /tini -- /findface-video-worker-cpu --config=/etc/findface-video-worker.yaml"]
+    depends_on: [findface-video-manager, findface-ntls, mongodb]
+    image: docker.int.ntl/ntech/universe/video-worker-cpu:ffserver-11.240325
+    logging: {driver: journald}
+    network_mode: service:pause
+    restart: always
+    volumes: ['./configs/findface-video-worker/findface-video-worker.yaml:/etc/findface-video-worker.yaml:ro',
+      './models:/usr/share/findface-data/models:ro', './cache/findface-video-worker/models:/var/cache/findface/models_cache',
+      './cache/findface-video-worker/recorder:/var/cache/findface/video-worker-recorder',
+      '/etc/nginx/ssl/my-example-domain.crt:/usr/local/share/ca-certificates/my-example-domain.crt:ro']
+
+For GPU, it will be enough to add the path to the certificate and update the root certificate store:
+
+findface-video-worker:
+    entrypoint: ["sh", "-c", "update-ca-certificates && exec /tini -- /findface-video-worker-gpu --config=/etc/findface-video-worker.yaml"]
+    depends_on: [findface-video-manager, findface-ntls, mongodb]
+    environment: [CUDA_VISIBLE_DEVICES=0]
+    image: docker.int.ntl/ntech/universe/video-worker-gpu:ffserver-11.240325
+    logging: {driver: journald}
+    network_mode: service:pause
+    restart: always
+    runtime: nvidia
+    volumes: ['./configs/findface-video-worker/findface-video-worker.yaml:/etc/findface-video-worker.yaml:ro',
+      './models:/usr/share/findface-data/models:ro', './cache/findface-video-worker/models:/var/cache/findface/models_cache',
+      './cache/findface-video-worker/recorder:/var/cache/findface/video-worker-recorder',
+      '/etc/nginx/ssl/my-example-domain.crt:/usr/local/share/ca-certificates/my-example-domain.crt:ro']
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+Configure nginx to use SSL. Open the nginx configuration file /opt/findface-multi/configs/findface-multi-ui/nginx-site.conf. Apply the following modifications to the file:
+
+Add the new server {...} section that contains the URL replacement rule. In the rewrite ^(.*) https://… line, replace ip_address_server_ffmulti with IP address of the server where FindFace Multi is installed.
+
+server {
+        listen 80;
+        server_name my-example-domain.com www.my-example-domain.com;
+        rewrite ^(.*) https://ip_address_server_ffmulti$1 permanent;
+        access_log off;
+}
+
+Comment out the following lines in the existing server {...} section:
+
+# listen 80 default_server;
+# listen [::]:80 default_server;
+
+Add the following lines, including the paths to the certificate and the key, to the existing server {...} section:
+
+listen 443 ssl;
+
+ssl_certificate     /etc/nginx/ssl/my-example-domain.com.crt;
+ssl_certificate_key /etc/nginx/ssl/my-example-domain.com.key;
+
+The example of the configuration file /opt/findface-multi/configs/findface-multi-ui/nginx-site.conf with correctly configured SSL settings is shown below:
+
+upstream ffsecurity {
+        server 127.0.0.1:8002;
+}
+
+upstream ffsecurity-ws {
+        server 127.0.0.1:8003;
+}
+
+upstream ffsecurity-django {
+        server 127.0.0.1:8004;
+}
+
+upstream audit {
+        server 127.0.0.1:8012;
+}
+
+upstream identity-provider {
+        server 127.0.0.1:8022;
+}
+
+map $http_upgrade $ffsec_upstream {
+        default "http://ffsecurity-ws";
+        "" "http://ffsecurity";
+}
+
+server {
+        listen 80;
+        server_name my-example-domain.com www.my-example-domain.com;
+        rewrite ^(.*) https://my-example-domain.com$1 permanent;
+        access_log off;
+}
+
+server {
+        # listen 80 default_server;
+        # listen [::]:80 default_server;
+
+        listen 443 ssl;
+        ssl_certificate /etc/nginx/ssl/my-example-domain.com.crt;
+        ssl_certificate_key /etc/nginx/ssl/my-example-domain.com.key;
+
+        root /var/lib/findface-security;
+
+        autoindex off;
+
+        server_name _;
+
+        location = / {
+                alias /usr/share/findface-security-ui/;
+                try_files /index.html =404;
+        }
+        location /static/ {
+        }
+        location /uploads/ {
+                # internal; # uncomment if you intend to enable OVERPROTECT_MEDIA
+                add_header 'Access-Control-Allow-Origin' '*';
+                add_header 'Access-Control-Allow-Methods' '*';
+                add_header 'Access-Control-Allow-Headers' '*';
+                add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+                add_header 'Access-Control-Max-Age' 2592000;
+
+                location ~ /card/(?<card_type>[a-zA-Z]+)/(?<card_id>[0-9]+)/attachments/(.*)$ {
+                        add_header 'Access-Control-Allow-Origin' '*';
+                        add_header 'Access-Control-Allow-Methods' '*';
+                        add_header 'Access-Control-Allow-Headers' '*';
+                        add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+                        add_header 'Access-Control-Max-Age' 2592000;
+                        add_header 'Content-Disposition' 'attachment';
+                        add_header 'Content-Security-Policy' 'sandbox';
+                }
+        }
+        location /ui-static/ {
+                alias /usr/share/findface-security-ui/ui-static/;
+        }
+        location /doc/ {
+                alias /opt/findface-security/doc/;
+        }
+        location /api-docs {
+                alias /opt/findface-security/rapidoc;
+                index index.html;
+        }
+        location /api-docs/ {
+                alias /opt/findface-security/rapidoc/;
+                try_files $uri index.html =404;
+        }
+        location ~ /videos/(?<video_id>[0-9]+)/upload/(.*)$ {
+                client_max_body_size 15g;
+
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Forwarded-For $remote_addr;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_pass http://ffsecurity;
+        }
+        location @django {
+                internal;
+                client_max_body_size 1g;
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Forwarded-For $remote_addr;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_http_version 1.1;
+                proxy_read_timeout 5m;
+                proxy_pass http://ffsecurity-django;
+        }
+
+#      location /v1/video-liveness {
+#          add_header Access-Control-Allow-Headers "*" always;
+#          add_header Access-Control-Allow-Methods "*" always;
+#          add_header Access-Control-Allow-Origin  "*" always;
+#
+#          if ($request_method = 'OPTIONS') {
+#              return 204;
+#          }
+#
+#          client_max_body_size 300m;
+#          proxy_set_header Host $http_host;
+#          proxy_set_header X-Forwarded-For $remote_addr;
+#          proxy_set_header X-Forwarded-Proto $scheme;
+#          proxy_pass http://127.0.0.1:18301;
+#          proxy_read_timeout 5m;
+#      }
+
+        location / {
+                client_max_body_size 1g;
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Forwarded-For $remote_addr;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_pass $ffsec_upstream;
+                proxy_read_timeout 5m;
+
+                location ~ ^/(cameras|videos|vms|external-vms).*/stream/?$ {
+                        proxy_set_header Host $http_host;
+                        proxy_set_header X-Forwarded-For $remote_addr;
+                        proxy_set_header X-Forwarded-Proto $scheme;
+                        proxy_pass http://ffsecurity;
+                }
+
+                location ~ ^/streams/(.*)$ {
+                        internal;
+                        proxy_pass $1$is_args$args;
+                }
+
+                location /audit-logs {
+                        proxy_pass http://audit;
+                }
+
+                location ~ ^/(auth|ad_groups|cproauth|groups|permissions|sessions|users|user-face|device-blacklist-records) {
+                        proxy_pass http://identity-provider;
+                }
+        }
+#       location /users/me/ad {
+#
+#                 proxy_pass <FFmulti_address>/auth/ad_login/; e.g http://127.0.0.1/auth/ad_login/;
+#                 proxy_method POST;
+#
+#                 proxy_set_header   X-Real-IP $remote_addr;
+#                 proxy_set_header   Host $http_host;
+#                 proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+#                 proxy_set_header  Authorization $http_authorization;
+#                 proxy_pass_header Authorization;
+#                 proxy_no_cache 1;
+#                 proxy_cache_bypass 1;
+#
+#                 auth_gss on;
+#                 auth_gss_realm <REALM>; # e.g. TESTNTL.LOCAL;
+#                 auth_gss_keytab <path/to/file.keytab>; # e.g. /var/lib/web.keytab
+#                 auth_gss_service_name <service_name>; # e.g. HTTP/web.testntl.local;
+#                 auth_gss_allow_basic_fallback on;
+#         }
+
+}
+
+Copy the generic nginx configuration file nginx.conf from the findface-multi-findface-multi-ui-1 container to the /etc/nginx/ directory:
+
+sudo docker cp findface-multi-findface-multi-ui-1:/etc/nginx/nginx.conf /etc/nginx/nginx.conf
+
+In the configuration file /etc/nginx/nginx.conf, find the SSL Settings section and append the following lines:
+
+ssl_session_cache   shared:SSL:10m;
+ssl_session_timeout 1h;
+
+In the /opt/findface-multi/docker-compose.yaml file, mount the SSL-encryption data directory /etc/nginx/ssl/ and the configuration file /etc/nginx/nginx.conf of the host system into the findface-multi-findface-multi-ui-1 container:
+
+Open the docker-compose.yaml file:
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+
+Locate the findface-multi-ui section and adjust it to make sure it looks like this:
+
+findface-multi-ui:
+  depends_on: [findface-multi-legacy]
+  image: docker.int.ntl/ntech/multi/multi/ui:ffmulti-2.2.0
+  network_mode: service:pause
+  restart: always
+  volumes: ['./configs/findface-multi-ui/nginx-site.conf:/etc/nginx/conf.d/default.conf:ro',
+    './data/findface-multi-legacy/uploads:/var/lib/findface-security/uploads',
+    '/etc/nginx/ssl:/etc/nginx/ssl',
+    '/etc/nginx/nginx.conf:/etc/nginx/nginx.conf:ro']
+
+For the backend_api and service_alarmer services, replace the http:// prefix with https:// in the DSN_IMAGE_EXTERNAL_ADDRESS environment variable:
+
+backend_api:
+  command: [python, -m, backend_api]
+  depends_on:
+    timescaledb: {condition: service_healthy}
+  environment: {DSN_FF_AUTH: 'http://127.0.0.1:8022/', DSN_IMAGE_EXTERNAL_ADDRESS: 'https://<ip_address>',
+    DSN_PG: 'postgresql+asyncpg://ntech:<...>@127.0.0.1:5433/annex',
+    SERVER_HOST: 127.0.0.1, SERVER_PORT: '2222'}
+  image: docker.int.ntl/presale/annex:2.0.1
+  logging: {driver: journald}
+  network_mode: service:pause
+  restart: always
+  ...
+service_alarmer:
+  command: [python, -m, service_alarmer]
+  depends_on:
+    rabbitmq: {condition: service_healthy}
+    timescaledb: {condition: service_healthy}
+  environment: {DROP_ALL: 'False', DSN_AMQP: 'amqp://ntech:<....>@127.0.0.1:5672/',
+    DSN_IMAGE_EXTERNAL_ADDRESS: 'https://<ip_address>', DSN_PG: 'postgresql+asyncpg://ntech:<...>@127.0.0.1:5433/annex'}
+  image: docker.int.ntl/presale/annex:2.0.1
+  logging: {driver: journald}
+  network_mode: service:pause
+  restart: always
+
+Edit the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+In the ROUTER_URL parameter, substitute the http:// prefix with https://.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+...
+'ROUTER_URL': 'https://127.0.0.1',
+...
+
+If you use a CA-certificate, specify in the ROUTER_URL parameter the domain for which the certificate was created:
+
+'ROUTER_URL': 'https://my-example-domain.com'
+
+Add https://my-example-domain.com address to the EXTERNAL_ADDRESS parameter:
+
+...
+EXTERNAL_ADDRESS = 'https://my-example-domain.com'
+...
+
+In the ANNEX_URL parameter, replace the http:// prefix with https://.
+
+...
+'ANNEX_URL': 'https://127.0.0.1/service_alarmer/alarms/'
+...
+
+Open the /etc/hosts file on the server where FindFace Multi is installed and add the following line:
+
+sudo vi /etc/hosts
+
+...
+127.0.0.1 my-example-domain.com
+
+In the system where you use a browser to interact with FindFace Multi navigate to the hosts file. Add IP address of the server that hosts FindFace Multi instead of the ip_address_server_ffmulti. Replace my-example-domain.com with your domain address - the same way you did it in the previous steps.
+
+For Linux OS do the following:
+
+sudo vi /etc/hosts
+
+...
+*ip_address_server_ffmulti* my-example-domain.com
+
+If you use Windows OS, run C:\Windows\System32\drivers\etc\hosts as an administrator. Add the following line to the hosts file:
+
+*ip_address_server_ffmulti* my-example-domain.com
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose down
+sudo docker-compose up -d
+
+If you use self-signed certificate, disable SSL certificate verification for cameras and uploaded video archives:
+
+Navigate to the Video Sources -> Cameras or Uploads.
+
+Click to the camera or uploaded video archive.
+
+On the Advanced tab, uncheck Verify the SSL certificate.
+
+[img:camera_verify_SSL_en]
+
+To use WebSocket Secure with Alarm Monitor, ensure that you include wss:// before the connection server address (e.g. wss://ip_address/annex/).
+
+Warning
+
+You may receive errors with getting screenshots from camera and working with video recorder, when deploying FindFace Multi in a highly distributed environment by fully customized installation and the pause component is excluded from installation. To resolve this problem, add the following lines to the end of the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py file:
+
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi
+
+sudo docker-compose restart
+
+           

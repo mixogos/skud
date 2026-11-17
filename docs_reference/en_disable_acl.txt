@@ -1,0 +1,26 @@
+
+
+# Disable ACL
+
+You can turn off FindFace Multi ACL if you do not need it, as the constant permission checks consume a significant amount of system resources.
+
+Do the following:
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py and /opt/findface-multi/configs/findface-multi-identity-provider/findface-multi-identity-provider.py configuration files.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+sudo vi /opt/findface-multi/configs/findface-multi-identity-provider/findface-multi-identity-provider.py
+
+In both files, set ENABLE_ACL = False.
+
+...
+
+ENABLE_ACL = False
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+          

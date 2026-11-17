@@ -1,0 +1,39 @@
+
+
+# Deduplicate Events
+
+In this section:
+
+Enable Deduplication
+
+How It Works
+
+Consider enabling deduplication to exclude coinciding object recognition events within one camera group.
+
+## Enable Deduplication
+
+To enable event deduplication, do the following:
+
+Enable the offline video detection mode for each camera in the group. See Add Camera for details.
+
+Navigate to the Settings tab. Click Camera Groups.
+
+Open the camera group settings.
+
+Select Deduplicate events with interval and specify the deduplication interval in seconds.
+
+## How It Works
+
+The deduplication algorithm works as follows. In the offline mode, the server receives one best object snapshot per tracking session on a camera.
+
+Note
+
+A tracking session continues until an object disappears from the camera field.
+
+If there are several tracking sessions on a camera(s) of a camera group within the specified deduplication interval, FindFace Multi handles the received snapshots in the following way:
+
+If there is a match with a record within the preceding deduplication interval, FindFace Multi drops a newly acquired snapshot. Otherwise, it saves the snapshot to the database.
+
+For unmatched objects, FindFace Multi considers both the similarity between objects and snapshot quality when performing deduplication. As a result, FindFace Multi drops all snapshots within the deduplication interval unless a new object snapshot is of higher quality. Thus, it guarantees the system deduplicates events without skipping high-quality objects, which are essential for further video analytics.
+
+          

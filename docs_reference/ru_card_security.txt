@@ -1,0 +1,56 @@
+
+
+# Включение защиты картотеки
+
+Если защита картотеки отключена, фотографии и вложения карточек будут доступны по прямой ссылке независимо от прав пользователя. Для того чтобы повысить безопасность картотеки, настройте FindFace Multi на выполнение всех медиа-запросов через приложение DJANGO для дополнительной проверки ACL.
+
+Важно
+
+Используйте защиту содержимого карточек только при необходимости, поскольку данная настройка оказывает серьезное негативное влияние на производительность системы.
+
+Важно
+
+Чтобы проверка ACL выполнялась правильно, необходимо установить разрешение на просмотр загруженных в карточки фотографий лиц, силуэтов и транспортных средств. Для этого перейдите Настройки → Роли →нужная роль → Права доступа и установите Просмотр для сущностей faceobject, bodyobject и carobject, в зависимости от того, фотографии каких объектов есть в карточках. Подробнее см. Создание новой роли в веб-интерфейсе.
+
+См.также
+
+Картотека
+
+Для включения защиты картотеки выполните следующие действия:
+
+Откройте файл конфигурации /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py. Найдите параметр OVERPROTECT_MEDIA и установите его в значение True.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+...
+
+'OVERPROTECT_MEDIA': True,
+
+Сделайте то же самое в файле конфигурации /opt/findface-multi/configs/findface-multi-identity-provider/findface-multi-identity-provider.py : найдите параметр OVERPROTECT_MEDIA и установите его в значение True.
+
+sudo vi /opt/findface-multi/configs/findface-multi-identity-provider/findface-multi-identity-provider.py
+
+...
+
+'OVERPROTECT_MEDIA': True,
+
+Откройте файл конфигурации nginx /opt/findface-multi/configs/findface-multi-ui/nginx-site.conf. Раскомментируйте параметр internal в разделе location /uploads.
+
+sudo vi /opt/findface-multi/configs/findface-multi-ui/nginx-site.conf
+
+location /uploads/ {
+   internal; # Uncomment if you intend to enable OVERPROTECT_MEDIA
+   ...
+}
+
+Выполните перезапуск контейнеров FindFace Multi.
+
+cd /opt/findface-multi
+
+sudo docker-compose restart
+
+После применения новой политики безопасности вошедшие в систему пользователи должны пройти повторную аутентификацию. Для того чтобы они сделали это, принудительно выведите их из системы командой:
+
+sudo docker container exec -it findface-multi-findface-multi-identity-provider-1 /opt/findface-security/bin/python3 /tigre_prototype/manage.py logout_all_users
+
+          

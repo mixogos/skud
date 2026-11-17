@@ -1,0 +1,56 @@
+
+
+# Enable Record Index Protection
+
+If the record index security is turned off, photos and attachments in records will be available by direct link, no matter what the user’s rights are. Configure FindFace Multi to run all media requests through the DJANGO application for ACL checks to increase record index security.
+
+Important
+
+Enable the record media security only if you need it, as this setting severely negatively impacts the system performance.
+
+Important
+
+For the ACL checks to work properly, you must set the view permission for photos of faces, bodies, and vehicles stored in records.  To do so, navigate Settings → Roles → specific role → Permissions and set View for the faceobject, bodyobject, and carobject entities, subject to the object types enabled in the system. See Create Custom Role in UI for details.
+
+See also
+
+Record Index
+
+To enable record index security, do the following:
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file. Locate the OVERPROTECT_MEDIA parameter and set it True.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+...
+
+'OVERPROTECT_MEDIA': True,
+
+Do the same in the /opt/findface-multi/configs/findface-multi-identity-provider/findface-multi-identity-provider.py configuration file: locate the OVERPROTECT_MEDIA parameter and set it True.
+
+sudo vi /opt/findface-multi/configs/findface-multi-identity-provider/findface-multi-identity-provider.py
+
+...
+
+'OVERPROTECT_MEDIA': True,
+
+Open the nginx configuration file /opt/findface-multi/configs/findface-multi-ui/nginx-site.conf. Uncomment internal in the location /uploads section.
+
+sudo vi /opt/findface-multi/configs/findface-multi-ui/nginx-site.conf
+
+location /uploads/ {
+   internal; # Uncomment if you intend to enable OVERPROTECT_MEDIA
+   ...
+}
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi
+
+sudo docker-compose restart
+
+After the new security policy is applied, logged-in users must re-authenticate. To make the users do so, execute the logout-all command:
+
+sudo docker container exec -it findface-multi-findface-multi-identity-provider-1 /opt/findface-security/bin/python3 /tigre_prototype/manage.py logout_all_users
+
+          

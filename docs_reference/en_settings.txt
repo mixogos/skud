@@ -1,0 +1,87 @@
+
+
+# General Settings
+
+The FindFace Multi general settings determine your system functioning and resource consumption. Here they are:
+
+generic confidence threshold
+
+thumbnail JPEG quality
+
+schedule for automatic events/episodes cleanup
+
+The general settings for faces, bodies, and vehicles are provided separately, depending on the enabled recognition objects.
+
+To configure the general settings, navigate Settings -> General. After you are finished with adjustments, click Update.
+
+[img:settings_en]
+
+By default, VMS cleanup settings are disabled in the general settings. To work with VMS cleanup settings from the web interface, follow this instruction Enable VMS Cleanup Settings in the UI. As a result, VMS cleanup settings will appear in the general settings list.
+
+Find the detailed explanation of each general setting below.
+
+In this section:
+
+Generic Confidence Threshold
+
+Thumbnail JPEG Quality
+
+Automatic Event and Episode Cleanup
+
+Global VMS Cleanup Settings
+
+## Generic Confidence Threshold
+
+FindFace Multi verifies that objects match (i.e. two faces belong to the same person), based on the pre-defined confidence threshold. The default threshold is set to the optimum value. If necessary, you can change it.
+
+Note
+
+The higher is the threshold, the less are chances that a wrong object will be positively verified, however, some valid photos may also fail verification.
+
+Tip
+
+You can configure the confidence thresholds individually for each camera group and watch list.
+
+Important
+
+The default generic confidence threshold is optimal for the majority of recognition cases. We do not recommend changing it on your own. Be sure to consult with our technical experts prior (support@ntechlab.com).
+
+## Thumbnail JPEG Quality
+
+Subject to JPEG quality, thumbnails may take up a significant amount of disc volume. Use the General tab to configure the parameter.
+
+## Automatic Event and Episode Cleanup
+
+Use the same tab to schedule automatically purging old events and related episodes from the database. For example, you can purge matched and unmatched events/episodes on different schedules and purge only full frames.
+
+Important
+
+If you want to disable events cleanup for a specific parameter from the list, set it to 0 (zero) Hours. The system will behave as if this parameter does not exist.
+
+E.g., to avoid cleanup of matched events for an object, specify 0 (zero) in the Delete matched events older than parameter. Then, Update the settings.
+
+[img:cleanup_param_en]
+
+## Global VMS Cleanup Settings
+
+After you have enabled VMS cleanup settings in the UI, you can configure the regular video cleanup directly from the web interface.
+
+[img:global_vms_cleanup_en]
+
+The following settings are available:
+
+Clean up between tracks: remove those intervals between tracks that do not contain recognition events.
+
+Save tracks of events: save tracks of events for a selected object (face, body, or vehicle).
+
+Keep events before and after: a video interval in seconds before and after a track with events that is kept along with the track.
+
+Cleanup threshold: a minimum interval between tracks in seconds. If an interval between tracks is below the threshold, the video is not removed. A minimum allowed value for this field is 360 seconds.
+
+Clean up between tracks from: time period (in days) during which the entire video archive is kept. After this period, the intervals between tracks will be cleaned up as configured in the settings. The value can be greater than or equal to zero.
+
+Clean up archive: enable the entire video archive cleanup.
+
+Archive cleanup age: a number of days the video archive is kept in the system. After that period, the video archive is removed.
+
+VMS cleanup settings in the general settings section apply globally to the system. To configure video cleanup for a single camera, switch to custom VMS cleanup settings.

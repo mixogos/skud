@@ -1,0 +1,115 @@
+
+
+# Authentication and Session Monitoring
+
+In this section:
+
+Authentication Types
+
+Configure Authentication and Session Renewal
+
+Log out All Users
+
+## Authentication Types
+
+FindFace Multi provides the following authentication types:
+
+password: standard login/password authentication. Enabled by default.
+
+face: authentication is possible only by the user’s face.
+
+face_or_password: authentication is possible using either a face or login/password.
+
+face_and_password: two-factor authentication. After a face is successfully recognized, the user must enter their credentials.
+
+Important
+
+For all the authentication types based on face recognition, you need the following configuration:
+
+standalone liveness service (findface-liveness-api)
+
+HTTPS
+
+Important
+
+Before using face recognition for authentication, you need to attach photos to users’ profiles and equip their workplaces with webcams.
+
+Note
+
+You can enable a work session monitoring for the authentication types face and face_or_password. In this case, the system will be periodically renewing the session after verifying that the face of a person at the workplace matches the user’s face that has logged in (see Configure Authentication and Session Renewal for details).
+
+Tip
+
+FindFace Multi also provides a certificate-based authentication that is configured independently. Contact our support team for details (support@ntechlab.com).
+
+## Configure Authentication and Session Renewal
+
+To configure authentication and session monitoring, do the following:
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py and /opt/findface-multi/configs/findface-multi-identity-provider/findface-multi-identity-provider.py configuration files. In both files, find the FFSECURITY and FFSECURITY_AUTH_CONFIG sections.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+sudo vi /opt/findface-multi/configs/findface-multi-identity-provider/findface-multi-identity-provider.py
+
+FFSECURITY = {
+    # auth config
+    # available options: face, password, face_and_password, face_or_password
+    'AUTH_TYPE': 'face_or_password',
+    # 180 days by default
+    'MAXIMUM_SESSION_LENGTH': 15552000,
+    ...
+    }
+
+...
+# - FindFace Security authorization configuration dictionary -
+
+FFSECURITY_AUTH_CONFIG = {
+    'FACE_AUTH_CONFIDENCE': 0.740,  # FAR = 2.5E-09  # model: [kiwi_320]
+    # 3 settings below are for front-end only
+    # session renew works only with face or face_or_password authorization type
+    'NEED_SESSION_RENEW': False,
+    'RENEW_SESSION_INTERVAL': 0,
+    'MAXIMUM_RENEW_ATTEMPTS': 2,
+}
+
+In the FFSECURITY section, set the following authentication parameters:
+
+AUTH_TYPE: authentication type. Available options: face, password, face_and_password, face_or_password.
+
+MAXIMUM_SESSION_LENGTH: the maximum session length, in seconds. After a session expires, the user will be automatically logged out unless the session is renewed.
+
+In the FFSECURITY_AUTH_CONFIG section, set the following authentication and session monitoring parameters:
+
+FACE_AUTH_CONFIDENCE: after a face in the webcam video is detected as alive, the system checks this face against the database of user photos with this confidence threshold.
+
+NEED_SESSION_RENEW: if True, a session can be renewed and prolonged by the time equal to MAXIMUM_SESSION_LENGTH, after verifying that the face of a person at the workplace matches the user’s face that has logged in.
+
+RENEW_SESSION_INTERVAL: period in seconds before the expected time of the session expiry, during which the system will attempt to renew the session by enabling the webcam and verifying the user’s face.
+
+MAXIMUM_RENEW_ATTEMPTS: the number of user verification attempts. The attempts occur in a row during the renewal interval.
+
+Note
+
+A verification attempt takes about 3 seconds to complete.
+
+Tip
+
+We recommend you to set up the monitoring parameters so that MAXIMUM_RENEW_ATTEMPTS multiplied by the attempt duration is less than RENEW_SESSION_INTERVAL. Otherwise, the system will extend the renewal interval x2, x3, and so on, subject to the number of attempts.
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi
+
+sudo docker-compose restart
+
+## Log out All Users
+
+To automatically log out all users, execute the following command on the FindFace Multi principal server console:
+
+sudo docker container exec -it findface-multi-findface-multi-identity-provider-1 /opt/findface-security/bin/python3 /tigre_prototype/manage.py logout_all_users
+
+Tip
+
+This command comes in handy when switching to a different authentication type.
+
+          

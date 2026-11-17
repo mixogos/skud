@@ -1,0 +1,187 @@
+
+
+# Deploy Video Recorder Step-by-Step
+
+There are the following ways to deploy Video Recorder:
+
+Automatically during the FindFace Multi deployment from a console installer. See FindFace Multi Standalone Automated Deployment for details.
+
+Step-by-step. Recommended in a multi-host environment.
+
+This section will guide you through the Video Recorder step-by-step deployment. Follow the instructions below minding the sequence.
+
+Tip
+
+Be sure to learn the FindFace Multi architecture first.
+
+In this section:
+
+Load Docker Images
+
+Configure Video Recorder Components
+
+## Load Docker Images
+
+Load Docker images as follows:
+
+Download the installer file findface-*.run.
+
+Put the .run file into some directory on the designated host (for example, /home/username).
+
+From this directory, make the .run file executable.
+
+chmod +x findface-*.run
+
+Execute the .run file.
+
+sudo ./findface-*.run
+
+The installer will ask you a few questions and perform several automated checks to ensure that the host meets the system requirements. After filling out each prompt, press Enter. The questions and answers are the following:
+
+Q: Which product should be installed?
+
+A: 1
+
+Which product should be installed?
+
+  1. [multi   ]  FindFace Multi
+  2. [server  ]  FindFace Server
+  3. [video-worker]  FindFace Video Worker
+
+(default: multi)
+product> 1
+
+Q: Please choose installation type:
+
+A: 3
+
+-  1 [stand-alone ]  Single Server
+-  2 [multi-worker]  Single Server, Multiple video workers
+-  3 [images      ]  Don't configure or start anything, just load the images and copy the models
+-  4 [custom      ]  Fully customized installation
+
+(default: stand-alone)
+type> 3
+
+Q: Directory to install into:
+
+A: Specify the FindFace Multi installation directory. By default, it’s /opt/findface-multi. Press Enter to confirm it. Otherwise, specify the directory of your choice and press Enter.
+
+Directory to install into:
+(default: /opt/findface-multi)
+dest_dir>
+
+Q: Select models to install. Note that you will need to accordingly edit extraction-api and tntapi configuration files. At least one of recognition models has to be enabled.
+
+A: By default, all neural network models are subject to installation. You can leave it as is by entering done, or select specific models. To do so, deselect all those on the list by entering -* in the command line, then select the required models by entering their sequence numbers (keyword): for example, 1 3 4. Enter done to save your selection and proceed to another step. If FindFace Multi is deployed earlier, the models do not need to be installed.
+
+Select models to install.
+Note that you will need to accordingly edit extraction-api and tntapi configuration files.
+At least one of recognition models has to be enabled.
+
+-  1 [ ] ./models/carattr/carattr.categories.v0.cpu.fnk
+...
+- 91 [ ] ./models/pedrec/pedrec.clio.gpu.fnk
+
+Enter keyword to select matching choices or -keyword to clear selection.
+Enter "done" to save your selection and proceed to another step.
+findface-data.models> done
+
+The system will load Docker images and install the models.
+
+## Configure Video Recorder Components
+
+Now you need to add the findface-video-storage and findface-video-streamer services, which are the part of the Video Recorder, to FindFace Multi configuration, and create the configuration files for these services.
+
+Do the following:
+
+Open the /opt/findface-multi/docker-compose.yaml configuration file. Add the findface-video-storage and findface-video-streamer services.
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+
+...
+findface-video-storage:
+  command: [--config=/etc/findface-video-storage.conf]
+  depends_on: [mongodb]
+  image: docker.int.ntl/ntech/universe/video-storage:ffserver-11.240325
+  network_mode: service:pause
+  restart: always
+  volumes: ['./configs/findface-video-storage/findface-video-storage.yaml:/etc/findface-video-storage.conf:ro']
+findface-video-streamer:
+  command: [--config=/etc/findface-video-streamer-cpu.ini]
+  depends_on: [findface-ntls, mongodb]
+  image: docker.int.ntl/ntech/universe/video-streamer-cpu:ffserver-11.240325
+  network_mode: service:pause
+  restart: always
+  volumes: ['./configs/findface-video-streamer/findface-video-streamer.yaml:/etc/findface-video-streamer-cpu.ini:ro',
+    './cache/findface-video-streamer:/var/cache/findface/video-streamer']
+
+Create directories.
+
+sudo mkdir -p /opt/findface-multi/configs/findface-video-storage/ /opt/findface-multi/configs/findface-video-streamer/
+
+Create a configuration file /opt/findface-multi/configs/findface-video-storage/findface-video-storage.yaml and add the following:
+
+sudo vi /opt/findface-multi/configs/findface-video-storage/findface-video-storage.yaml
+
+listen: :18611
+debug: false
+external-address: http://ip_address:18611/
+streamer:
+  endpoints:
+  - 127.0.0.1:9000
+chunk-storage:
+  type: webdav
+  webdav:
+    timeouts:
+      connect: 5s
+      response_header: 30s
+      overall: 35s
+      idle_connection: 10s
+    max-idle-conns-per-host: 20
+    keepalive: 24h0m0s
+    trace: false
+    upload-url: http://127.0.0.1:3333/uploads/video_storage
+  s3:
+    endpoint: ''
+    bucket-name: ''
+    access-key: ''
+    secret-access-key: ''
+    secure: true
+    region: ''
+    public-url: ''
+    operation-timeout: 30
+  localfs:
+    directory: ''
+meta-storage:
+  mongo-uri: mongodb://127.0.0.1
+  database: video-storage
+  timings:
+    connect: 3s
+
+Note
+
+<ip_address> in the section external-address must be substituted into your ip address for FindFace Multi.
+
+Create a configuration file /opt/findface-multi/configs/findface-video-streamer/findface-video-streamer.yaml and add the following:
+
+sudo vi /opt/findface-multi/configs/findface-video-streamer/findface-video-streamer.yaml
+
+streamer:
+  port: 9000
+  max_backpressure: 33554432
+  io_buffer_size: 524288
+video_storage:
+  url: http://127.0.0.1:18611
+  timeout: 6
+cache:
+  dir: /var/cache/findface/video-streamer
+
+Start FindFace Multi containers:
+
+cd /opt/findface-multi/
+docker-compose up -d
+
+Video Recorder is now successfully deployed. To configure Video Recorder after the deployment, follow these instructions.
+
+          

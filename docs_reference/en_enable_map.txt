@@ -1,0 +1,81 @@
+
+
+# Configure Maps
+
+There is a new type of display on the Video Sources, Episodes & Events, as well as, the Search tabs – maps.
+Maps are an integral part of the video analytics system and play an important role in ensuring security. The functionality of the maps in FindFace Multi allows the operator to quickly navigate the geographical location of the cameras and easily navigate the area where the events of interest take place.
+
+To configure maps functionality in FindFace Multi, do the following:
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+Find the section MAP CONFIG EXAMPLE.
+
+   # MAP CONFIG EXAMPLE
+   "map": {
+       "enabled": True,
+       "default_zoom": 15,
+       "default_center": {"lat": 55.7558, "lng": 37.6173},
+       "maximum_objects_on_map": 250,
+       "show_cameras_thumbnails":  True,
+       "providers": [
+         {"id": "default", "name": "OSM", "type": "tile", "url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
+#        {"id": "stamen", "name": "Stamen Toner", "type": "tile", "url": "https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png"}
+       ]
+   },
+  ...
+
+If necessary, configure the following parameters:
+
+"default_zoom": default map zoom.
+
+"default_center": default map center.
+
+"maximum_objects_on_map": the maximum number of objects displayed on the map.
+
+"show_cameras_thumbnails": enable/disable camera’s thumbnails on the Video Source tab in the map view mode.
+
+(Optional) To integrate a new tile server, do the following:
+
+In the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file, find the MAP CONFIG EXAMPLE → "map" → "providers" section and add the tile server configuration:
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+# MAP CONFIG EXAMPLE
+"map": {
+  ....
+    "providers": [
+      {"id": "provider_ID", "name": "my-server_name", "type": "tile", "url": "https://my-server/tiles/{z}/{x}/{y}.png"}
+      ...
+    ]
+},
+...
+
+In the /opt/findface-multi/configs/findface-multi-ui/nginx-site.conf configuration file, find the server section and add the hostname of your server "my-server.ru" into the add_header section after *.tile.openstreetmap.org.
+
+sudo vi /opt/findface-multi/configs/findface-multi-ui/nginx-site.conf
+
+server {
+        ...
+        add_header Content-Security-Policy "default-src 'self'; img-src 'self' *.tile.openstreetmap.org my-server.ru blob: data:; media-src 'self' blob:; connect-src 'self' data:; style-src 'self' 'unsafe-inline';";
+        ...
+}
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+sudo docker-compose restart
+
+See also
+
+Video Sources
+
+Work with Events
+
+Organize Events with Episodes
+
+Search Objects in System
+
+          

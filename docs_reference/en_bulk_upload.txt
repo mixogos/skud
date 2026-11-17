@@ -1,0 +1,148 @@
+
+
+# Console Bulk Record Upload
+
+In addition to the web interface upload, you can bulk-upload records to the record index via the uploader.py console utility. We recommend preferring this utility over the web interface if the number of uploaded photos is more than 10,000.
+
+Tip
+
+To view the uploader.py help, execute:
+
+docker exec findface-multi-findface-multi-legacy-1 /opt/findface-security/bin/python3 /tigre_prototype/ffsecurity/uploader.py --help
+
+Usage: uploader.py [OPTIONS] COMMAND [ARGS]...
+
+Options:
+--job FILE        Job file (default: enroll-job.db)
+--log-level TEXT  Log level
+--fsync BOOLEAN   Call fsync() to prevent data loss on power failure
+--help            Show this message and exit.
+
+Commands:
+add    Add items from CSV or TSV file to job
+print  Print contents of job file as JSON
+run    Run upload job
+
+docker exec findface-multi-findface-multi-legacy-1 /opt/findface-security/bin/python3 /tigre_prototype/ffsecurity/uploader.py add --help
+
+Usage: uploader.py add [OPTIONS] FILES...
+
+Options:
+--format [csv|tsv]  Input file format - CSV or TSV
+--delimiter TEXT    Field delimiter - by default it's "\t" for TSV and ","
+                    for CSV
+
+--help              Show this message and exit.
+
+ docker exec findface-multi-findface-multi-legacy-1 /opt/findface-security/bin/python3 /tigre_prototype/ffsecurity/uploader.py print --help
+
+ Usage: uploader.py print [OPTIONS]
+
+ Print contents of job file as JSON
+
+ Options:
+--failed  Show only failed images
+--noface  Show only images without detection
+--help    Show this message and exit.
+
+docker exec findface-multi-findface-multi-legacy-1 /opt/findface-security/bin/python3 /tigre_prototype/ffsecurity/uploader.py run --help
+
+Usage: uploader.py run [OPTIONS]
+
+Run upload job
+
+Options:
+--parallel INTEGER        Number of enroll threads (default: 10)
+--api TEXT                API url (default: http://127.0.0.1:80/)
+                          [required]
+
+--user TEXT               API username  [required]
+--password TEXT           API password  [required]
+--watch-lists TEXT        Comma-separated list of card list ids  [required]
+--inactive                Mark new cards as inactive
+--failed                  Include failed images
+--noface                  Include images without detection
+--all-faces               Enroll all found faces on each image
+--detect-timeout INTEGER  Request timeout for detect photos
+--logging-delta INTEGER   Logging period delta
+--help                    Show this message and exit.
+
+Do the following:
+
+Write the list of photos and metastrings to a CSV or TSV file.
+
+Important
+
+The file used as a metadata source must have the following format: path to photo | metastring.
+
+To prepare a TSV file, you can use a script, or generate it with python or other utility.
+
+Note
+
+Both the script and the command in the examples below create the images.tsv file. Each image in the list will be associated with a metastring coinciding with the image file name in the format path to photo | metastring.
+
+To build a TSV file listing photos, upload the script to your home directory, for example /home/ubuntu, and run the following command:
+
+sudo docker run -it --rm --network host --volume ${PWD}:/home/ubuntu/create_cards --volume /home/ubuntu/photos:/home/ubuntu/photos docker.int.ntl/ntech/multi/multi/legacy:ffmulti-2.2.0 sh -c "cd /home/ubuntu/create_cards && /opt/findface-security/bin/python3 tsv_builder.py /home/ubuntu/photos"
+
+where /home/ubuntu/photos is a directory with your photos.
+
+A TSV file may also be generated using the following command:
+
+python3 tsv_builder.py /home/ubuntu/photos/
+
+You can use a images.tsv file as example.
+
+Create a job file out of a CSV or TSV file by using the add utility command. As a result, a file enroll-job.db will be created and saved in a current directory.
+
+sudo docker run -it --rm --network host --volume ${PWD}:/home/ubuntu/create_cards docker.int.ntl/ntech/multi/multi/legacy:ffmulti-2.2.0 sh -c "cd /home/ubuntu/create_cards && /opt/findface-security/bin/python3 /tigre_prototype/ffsecurity/uploader.py add /home/ubuntu/create_cards/images.tsv"
+
+The add utility options:
+
+--format: input file format, tsv by default,
+
+--delimiter: field delimiter, by default "\t" for TSV, and "," for CSV.
+
+Note
+
+A job file represents a sqlite database which can be opened on the sqlite3 console.
+
+Process the job file by specifying the path to the photos (for example, /home/ubuntu/photos) and passing the necessary arguments. Use the following command:
+
+sudo docker run -it --rm --network host --volume ${PWD}:/home/ubuntu/create_cards --volume /home/ubuntu/photos:/home/ubuntu/photos docker.int.ntl/ntech/multi/multi/legacy:ffmulti-2.2.0 sh -c "cd /home/ubuntu/create_cards && /opt/findface-security/bin/python3 /tigre_prototype/ffsecurity/uploader.py run --user admin --password password --watch-lists 1"
+
+The run utility options:
+
+--parallel: the number of photo upload threads, 10 by default. The more threads you use, the faster the bulk upload is completed, however it requires more resources too.
+
+--api: findface-security API URL, http://127.0.0.1:80/ by default. Mandatory option.
+
+--user: login. Mandatory option.
+
+--password: password. Mandatory option.
+
+--watch-lists: comma-separated list of the watch lists id’s. Mandatory option.
+
+--inactive: mark new records as inactive.
+
+--failed: should an error occur during the job file processing, correct the mistake and try again with this option.
+
+--noface: by default, images classified as having no faces will be assigned the NOFACE status and automatically excluded from the upload. To attempt re-detecting faces in such images, re-run the job file with this option. If the re-detection gives a negative result again, an image will be skipped and a relevant record will appear in the upload log.
+
+--all-faces: upload all faces from a photo if it features several faces.
+
+--detect-timeout: request timeout for detect photos.
+
+--logging-delta: logging period delta.
+
+(Optional) Print the job processing results as JSON. If necessary, you can print only failed images/ images without detected faces. Use the following command:
+
+sudo docker run -it --rm --network host --volume ${PWD}:/home/ubuntu/create_cards --volume /home/ubuntu/NTL_impersonated:/home/ubuntu/NTL_impersonated docker.int.ntl/ntech/multi/multi/legacy:ffmulti-2.2.0 sh -c "cd /home/ubuntu/create_cards && /opt/findface-security/bin/python3 /tigre_prototype/ffsecurity/uploader.py  print --noface --failed"
+
+The print utility options:
+
+--failed: show only failed images.
+
+--noface: show only images without detection.
+
+          

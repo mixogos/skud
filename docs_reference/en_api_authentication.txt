@@ -1,0 +1,195 @@
+
+
+# Authentication
+
+API requests to FindFace Multi are to be sent to http://<findface-ip:port>.
+
+## HTTP Basic authentication
+
+HTTP basic authentication is a simple challenge and response mechanism with which a server can request authentication information (a username and password).
+
+Put your credentials to the login form:
+
+Username – username of your FindFace Multi account.
+
+Password – password for your FindFace Multi account.
+
+[img:api_credentials_en]
+
+This data are to be sent in the Authorization request header as base64 code.
+
+Authorization: Basic <base64(username:password)>
+
+## API Key authorization
+
+To create an authorization token, use the following method:
+
+POST /auth/login/
+
+You should provide basic authorization credentials (username, password) earlier.
+
+This method returns a structure containing an authorization token, that you can use in all other methods.
+
+If the system uses face and password authorization, together with the Basic authorization header, additionally pass the token received during face authorization in the video_auth_token field.
+
+The REQUEST BODY is required and contains application/json object with the following parameters:
+
+Tip
+
+* - means required parameters. 🆁 – read only.
+
+Option
+
+Schema
+
+Description
+
+video_auth_token
+
+string
+
+Constraints: Min 1 chars. Inactive token from face authorization. Required when face_and_password is set.
+
+uuid*
+
+string
+
+Constraints: 1 to 256 chars. Session unique identifier on the device.
+
+mobile
+
+boolean
+
+Device is mobile.
+
+device_info
+
+<any-key>: str┃int┃float┃bool┃object┃array┃null
+
+Device information.
+
+Request example
+
+{
+ "video_auth_token": "A",
+ "uuid": "A",
+ "mobile": false,
+ "device_info": {}
+}
+
+CURL Example
+
+curl -X POST "http://<findface-ip:port>/auth/login/" \
+ -H "Accept: application/json" \
+ -H "Content-Language: ru" \
+ -H "Accept-Language: ru" \
+ -H "Authorization: Basic <base64(username:password)>" \
+ -H "Content-Type: application/json" \
+ -d '{"uuid":"A"}' \
+
+Returns:
+
+200 on success.
+
+401 if response body is unspecified.
+
+If the response is successful (OK: 200), it returns an object that contains the following parameters. Example.
+
+Response example
+
+Option
+
+Schema
+
+Description
+
+token*
+
+string
+
+Authorization token.
+
+user*
+
+{…}
+
+User info.
+
+token_expiration_datetime*
+
+date-time
+
+Token expiration datetime.
+
+user contains the following parameters:
+
+id* : integer 🆁
+
+active* : boolean
+
+created_date* : date-time 🆁
+
+groups : [integer]
+
+modified_date* : date-time 🆁 – Object modification date.
+
+permissions* : [string]
+
+real_name* : string – Constraints: Max 80 chars.
+
+name* : string – Constraints: Max 80 chars.
+
+comment : string – Extended description of the user, up to 2048 chars.
+
+camera_group_permissions* : {<any-key>: string}
+
+watch_list_permissions* : {<any-key>: string}
+
+group_permissions* : {<any-key>: string}
+
+primary_group* : integer
+
+language : enum – Allowed: en-us┃es┃ru. Backend message language for the user.
+
+has_face* : boolean 🆁 – User photo is provided.
+
+face_cover : string┃null – Constraints: Max 32 chars.
+
+ad_user* : boolean 🆁 – User is registered in Active Directory.
+
+Response example
+
+{
+ "token": "string",
+ "user": {
+   "id": 0,
+   "active": false,
+   "created_date": "1970-01-01T00:00:00.000Z",
+   "groups": [
+     0
+   ],
+   "modified_date": "1970-01-01T00:00:00.000Z",
+   "permissions": [
+     "string"
+   ],
+   "real_name": "AAAAAA",
+   "name": "AAAAAA",
+   "comment": "AAAAAA",
+   "camera_group_permissions": {},
+   "watch_list_permissions": {},
+   "group_permissions": {},
+   "primary_group": 0,
+   "language": "en-us",
+   "has_face": false,
+   "face_cover": "AAAAAA",
+   "ad_user": false
+ },
+ "token_expiration_datetime": "1970-01-01T00:00:00.000Z"
+}
+
+Paste this obtained token into the API Key field in the authorization form: Token <token> and click SET or put it into the Authorization HTTP header: Authorization: Token 000.... All requests that fail to provide a valid authentication token will result in an HTTP 401 Unauthorized response.
+
+[img:api_authorization_form_en]
+
+To disable applied keys, click REMOVE or CLEAR ALL API KEYS or send a request POST /auth/logout/.
+

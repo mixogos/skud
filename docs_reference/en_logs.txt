@@ -1,0 +1,98 @@
+
+
+# Logging
+
+Consulting logs is one of the first things you should do to identify a cause of a problem. By default, the FindFace Multi processes are logged to Docker container logs,  which can be accessed via the docker logs and docker service logs commands. In addition, Docker uses the json-file logging driver, which caches container logs in JSON.  You can configure Docker to use another logging driver, choosing from the multiple logging mechanisms available.
+
+This section describes how to set up Docker to use the journald logging driver, which sends container logs to the systemd journal. In this case, log entries are retrieved using the journalctl command, through the journal API, or the docker logs command. You can configure the systemd journal as well by using the instructions below.
+
+In this section:
+
+Configure Journald
+
+Enabling Journald Logging Driver
+
+Consult Logs
+
+## Configure Journald
+
+To configure the systemd-journal service, do the following:
+
+Check whether the /var/log/journal directory already exists. If not, create it by executing the following command:
+
+sudo mkdir /var/log/journal
+sudo chmod 2755 /var/log/journal
+
+Open the /etc/systemd/journald.conf configuration file. Enable saving journald logs to your hard drive by uncommenting the Storage parameter and changing its value to persistent. Disable filtering in systemd-journal as well:
+
+sudo vi /etc/systemd/journald.conf
+
+[Journal]
+...
+Storage=persistent
+...
+RateLimitIntervalSec=0
+RateLimitBurst=0
+...
+
+If necessary, uncomment and edit the SystemMaxUse parameter. This parameter determines the maximum volume of log files on your hard drive. Specify its value in bytes or use K, M, G, T, P, E as units for the specified size (equal to \(1024\), \(1024^2\), … bytes).
+
+...
+SystemMaxUse=3G
+
+Restart the journald service.
+
+sudo systemctl restart systemd-journald.service
+
+## Enabling Journald Logging Driver
+
+To enable Docker to use the journald logging driver, do the following:
+
+Add the following line to the /etc/docker/daemon.json configuration file.
+
+Tip
+
+This file may not be present on your system. Check whether it exists and if it does not, create the /etc/docker directory first and then the file.
+
+sudo mkdir /etc/docker
+sudo touch /etc/docker/daemon.json
+
+sudo vi /etc/docker/daemon.json
+
+{
+  "log-driver": "journald"
+}
+
+Stop all Docker containers.
+
+sudo docker stop $(sudo docker ps -a -q)
+
+Restart the Docker service.
+
+sudo systemctl restart docker
+
+Start all Docker containers.
+
+sudo docker start $(sudo docker ps -a -q)
+
+## Consult Logs
+
+Use any convenient method to work with the journald logs. The following commands are a good place to start:
+
+Display all logs:
+
+journalctl -fa
+
+Display logs by container ID:
+
+journalctl CONTAINER_ID=<container_id> -f
+
+Display logs by container name:
+
+journalctl CONTAINER_NAME=<container-name> -f
+
+See also
+
+Audit Log
+
+          

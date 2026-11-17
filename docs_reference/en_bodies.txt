@@ -1,0 +1,526 @@
+
+
+# Enable Body and Body Attribute Recognition
+
+FindFace Multi allows you to recognize individual human bodies and body attributes.
+
+The body attributes are as follows:
+
+gender:
+
+male;
+
+female;
+
+age (by group):
+
+0-16 years;
+
+17-35 years;
+
+36-50 years;
+
+50+ years;
+
+clothing type:
+
+generalized category of upper body wear: long sleeves, short sleeves, no sleeve;
+
+specific type of upper body wear: jacket, coat, sleeveless vest, sweatshirt, T-shirt, shirt, dress;
+
+type of lower body wear: pants, skirt, shorts, nondescript;
+
+type of headgear: hat/cap, hood/headscarf, none;
+
+clothing color (top/bottom);
+
+presence of personal protective equipment (PPE):
+
+PPE item: vest, helmet;
+
+PPE color;
+
+PPE recognition score;
+
+whether a person has a bag:
+
+on the back;
+
+in hand(s);
+
+a person’s fall;
+
+smoking;
+
+phone usage (talking/holding in hands).
+
+Recognition of human bodies and their attributes can be configured at the installation level. This section describes how to enable body and body attribute recognition in case this step has been skipped during installation.
+
+To enable recognition of human bodies and their attributes, do the following:
+
+Specify neural network models for body object and body attribute recognition in the /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml configuration file.
+
+Important
+
+Be sure to choose the right acceleration type for each model, matching the acceleration type of findface-extraction-api: CPU or GPU. Be aware that findface-extraction-api on CPU can work only with CPU-models, while findface-extraction-api on GPU supports both CPU- and GPU-models.
+
+Open the findface-extraction-api.yaml configuration file.
+
+sudo vi /opt/findface-multi/configs/findface-extraction-api/findface-extraction-api.yaml
+
+Specify the body detector model in the detectors → models section by pasting the following code:
+
+GPU
+
+detectors:
+
+  ...
+  models:
+    ...
+    body_gustav:
+      aliases:
+      - body
+      - edie
+      - shiloette
+      - glen
+      model: detector/bodydet.kali_accurate.021.gpu.fnk
+      options:
+        min_object_size: 32
+        resolutions:
+        - 2048x2048
+  ...
+
+CPU
+
+detectors:
+
+  ...
+  models:
+    ...
+    body_gustav:
+      aliases:
+      - body
+      - edie
+      - shiloette
+      - glen
+      model: detector/bodydet.kali_accurate.021.cpu.fnk
+      options:
+        min_object_size: 32
+        resolutions:
+        - 2048x2048
+  ...
+
+Make sure that the objects → body section contains the quality_attribute: body_quality and the  base_normalizer: facenorm/cropbbox.v2.gpu.fnk or the base_normalizer: facenorm/cropbbox.v2.cpu.fnk, depending on your acceleration type:
+
+GPU
+
+objects:
+  ...
+  body:
+    base_normalizer: facenorm/cropbbox.v2.gpu.fnk
+    quality_attribute: body_quality
+  ...
+
+CPU
+
+objects:
+  ...
+  body:
+    base_normalizer: facenorm/cropbbox.v2.cpu.fnk
+    quality_attribute: body_quality
+  ...
+
+Make sure that the normalizers section contains a model for the cropbbox normalizer, as shown in the example below. This normalizer is required for the extractors.
+
+GPU
+
+normalizers:
+  ...
+
+  models:
+    ...
+    cropbbox:
+      model: facenorm/cropbbox.v2.gpu.fnk
+    ...
+
+CPU
+
+normalizers:
+  ...
+
+  models:
+    ...
+    cropbbox:
+      model: facenorm/cropbbox.v2.cpu.fnk
+    ...
+
+Specify the extraction models in the extractors → models section, subject to the extractors you want to enable:
+
+GPU
+
+extractors:
+  ...
+  models:
+    body_action_base6:
+      default:
+        model: ''
+    body_action_car:
+      default:
+        model: ''
+    body_action_fights:
+      default:
+        model: ''
+    body_age_gender:
+      default:
+        model: pedattr/pedattr.age_gender.v0.gpu.fnk
+    body_bags:
+      default:
+        model: pedattr/pedattr.bags.v0.gpu.fnk
+    body_clothes:
+      default:
+        model: pedattr/pedattr.clothes_type.v0.gpu.fnk
+    body_clothes34671:
+      default:
+        model: ''
+    body_color:
+      default:
+        model: pedattr/pedattr.color.v1.gpu.fnk
+    body_emben:
+      default:
+        model: pedrec/pedrec.durga.gpu.fnk
+    body_fall:
+      default:
+        model: pedattr/pedattr.fall.v1.gpu.fnk
+    body_handface:
+      default:
+        model: pedattr/pedattr.handface.v1.gpu.fnk
+    body_mideast_clothes:
+      default:
+        model: ''
+    body_protective_equipment:
+      default:
+        model: pedattr/pedattr.protective.v1.gpu.fnk
+    body_quality:
+      default:
+        model: pedattr/pedattr.quality.v0.gpu.fnk
+    ...
+
+CPU
+
+extractors:
+  ...
+  models:
+    body_action_base6:
+      default:
+        model: ''
+    body_action_car:
+      default:
+        model: ''
+    body_action_fights:
+      default:
+        model: ''
+    body_age_gender:
+      default:
+        model: pedattr/pedattr.age_gender.v0.cpu.fnk
+    body_bags:
+      default:
+        model: pedattr/pedattr.bags.v0.cpu.fnk
+    body_clothes:
+      default:
+        model: pedattr/pedattr.clothes_type.v0.cpu.fnk
+    body_clothes34671:
+      default:
+        model: ''
+    body_color:
+      default:
+        model: pedattr/pedattr.color.v1.cpu.fnk
+    body_emben:
+      default:
+        model: pedrec/pedrec.durga.cpu.fnk
+    body_fall:
+      default:
+        model: pedattr/pedattr.fall.v1.cpu.fnk
+    body_handface:
+      default:
+        model: pedattr/pedattr.handface.v1.cpu.fnk
+    body_mideast_clothes:
+      default:
+        model: ''
+    body_protective_equipment:
+      default:
+        model: pedattr/pedattr.protective.v1.cpu.fnk
+    body_quality:
+      default:
+        model: pedattr/pedattr.quality.v0.cpu.fnk
+    ...
+
+The following extractors are available:
+
+Extractor
+
+Configure as follows
+
+age and gender
+
+body_age_gender: pedattr/pedattr.age_gender.v0.gpu.fnk
+
+body_age_gender: pedattr/pedattr.age_gender.v0.cpu.fnk
+
+presence of bag
+
+body_bags: pedattr/pedattr.bags.v0.gpu.fnk
+
+body_bags: pedattr/pedattr.bags.v0.cpu.fnk
+
+clothing type
+
+body_clothes: pedattr/pedattr.clothes_type.v0.gpu.fnk
+
+body_clothes: pedattr/pedattr.clothes_type.v0.cpu.fnk
+
+clothing color
+
+body_color: pedattr/pedattr.color.v1.gpu.fnk
+
+body_color: pedattr/pedattr.color.v1.cpu.fnk
+
+individual body
+feature vector
+
+body_emben: pedrec/pedrec.durga.gpu.fnk
+
+body_emben: pedrec/pedrec.durga.cpu.fnk
+
+presence of
+protective
+equipment
+
+body_protective_equipment: pedattr/pedattr.protective.v1.gpu.fnk
+
+body_protective_equipment: pedattr/pedattr.protective.v1.cpu.fnk
+
+body quality
+
+body_quality: pedattr/pedattr.quality.v0.gpu.fnk
+
+body_quality: pedattr/pedattr.quality.v0.cpu.fnk
+
+body fall
+
+body_fall: pedattr/pedattr.fall.v1.gpu.fnk
+
+body_fall: pedattr/pedattr.fall.v1.cpu.fnk
+
+smoking,
+phone usage
+
+body_handface: pedattr/pedattr.handface.v1.gpu.fnk
+
+body_handface: pedattr/pedattr.handface.v1.cpu.fnk
+
+Important
+
+For body recognition to work properly, the body_emben and the body_quality extractors must be enabled.
+
+GPU
+
+extractors:
+  ...
+  models:
+    ...
+    body_emben:
+      default:
+        model: pedrec/pedrec.durga.gpu.fnk
+    ...
+    body_quality:
+      default:
+        model: pedattr/pedattr.quality.v0.gpu.fnk
+    ...
+
+CPU
+
+extractors:
+  ...
+  models:
+    ...
+    body_emben:
+      default:
+        model: pedrec/pedrec.durga.cpu.fnk
+    ...
+    body_quality:
+      default:
+        model: pedattr/pedattr.quality.v0.cpu.fnk
+    ...
+
+Modify the /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml configuration file.
+
+In the models section, specify the body neural network models by analogy with the example below:
+
+GPU
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+models:
+  ...
+  detectors:
+    ...
+    body:
+      fnk_path: /usr/share/findface-data/models/detector/bodydet.gustav_normal.021.gpu.fnk
+      min_size: 60
+    ...
+  normalizers:
+    ...
+    body_norm:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.gpu.fnk
+    body_norm_quality:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.gpu.fnk
+    ...
+  extractors:
+    ...
+    body_quality:
+      fnk_path: /usr/share/findface-data/models/pedattr/pedattr.quality.v0.gpu.fnk
+      normalizer: body_norm_quality
+
+CPU
+
+sudo vi /opt/findface-multi/configs/findface-video-worker/findface-video-worker.yaml
+
+models:
+  ...
+  detectors:
+    ...
+    body:
+      fnk_path: /usr/share/findface-data/models/detector/bodydet.gustav_normal.021.cpu.fnk
+      min_size: 60
+    ...
+  normalizers:
+    ...
+    body_norm:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.cpu.fnk
+    body_norm_quality:
+      fnk_path: /usr/share/findface-data/models/facenorm/cropbbox.v2.cpu.fnk
+    ...
+  extractors:
+    ...
+    body_quality:
+      fnk_path: /usr/share/findface-data/models/pedattr/pedattr.quality.v0.cpu.fnk
+      normalizer: body_norm_quality
+
+Make sure that the objects → body section is included:
+
+objects:
+  ...
+  body:
+    normalizer: body_norm
+    quality: body_quality
+    track_features: ''
+
+Open the /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml configuration file and make sure it contains the body section in detectors that looks similar to the example below.
+
+sudo vi /opt/findface-multi/configs/findface-video-manager/findface-video-manager.yaml
+
+detectors:
+  ...
+  body:
+    filter_min_quality: 0.6
+    filter_min_size: 70
+    filter_max_size: 8192
+    roi: ''
+    fullframe_crop_rot: false
+    fullframe_use_png: false
+    jpeg_quality: 95
+    overall_only: true
+    realtime_post_first_immediately: false
+    realtime_post_interval: 1
+    realtime_post_every_interval: false
+    track_interpolate_bboxes: true
+    track_miss_interval: 1
+    track_overlap_threshold: 0.25
+    track_max_duration_frames: 0
+    track_send_history: false
+    post_best_track_frame: true
+    post_best_track_normalize: true
+    post_first_track_frame: false
+    post_last_track_frame: false
+    tracker_type: simple_iou
+    track_deep_sort_matching_threshold: 0.65
+    track_deep_sort_filter_unconfirmed_tracks: true
+    track_object_is_principal: false
+    track_history_active_track_miss_interval: 0
+    filter_track_min_duration_frames: 1
+    extractors_track_triggers: {}
+
+Enable recognition of bodies and body attributes in the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file. Do the following:
+
+In the FFSECURITY section, set 'ENABLE_BODIES': True.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+FFSECURITY = {
+    ...
+
+    # optional objects to detect
+    'ENABLE_BODIES': True,
+    ...
+
+To improve quality of body recognition, we recommend that you enable additional attribute analysis. In this case, the system compares not only the feature vectors of two bodies but also their attributes. A conclusion about the bodies’ match is only made if both the feature vectors and attributes of the bodies coincide.
+
+You can use the following attributes for additional analysis:
+
+bottom_color: color of lower body wear;
+
+top_color: color of upper body wear;
+
+headwear: type and absence/presence of headgear;
+
+detailed_upper_clothes: specific type of upper body wear, e.g., jacket;
+
+upper_clothes: generalized category of upper body wear: long sleeves, short sleeves, no sleeve;
+
+lower_clothes: type of lower body wear, e.g., pants;
+
+helmet_type: helmet type by color, visibility, absence/presence;
+
+vest_type: vest type by color, visibility, absence/presence;
+
+age_group: belonging to any of four age groups: 0-16, 17-35, 36-50, 50+ years;
+
+gender: male or female.
+
+To enable additional attribute analysis, set True in the FFSECURITY → EXTRA_BODY_MATCHING section for the attributes that you want to compare. Set min_confidence value between 0 and 1.
+
+FFSECURITY = {
+    # use additional features for extra confidence when matching body by emben
+    'EXTRA_BODY_MATCHING': {
+        'bottom_color': {'enabled': False, 'min_confidence': 0},
+        'top_color': {'enabled': False, 'min_confidence': 0},
+        'headwear': {'enabled': False, 'min_confidence': 0},
+        'detailed_upper_clothes': {'enabled': False, 'min_confidence': 0},
+        'upper_clothes': {'enabled': False, 'min_confidence': 0},
+        'lower_clothes': {'enabled': False, 'min_confidence': 0},
+        'helmet_type': {'enabled': False, 'min_confidence': 0},
+        'vest_type': {'enabled': False, 'min_confidence': 0},
+        'age_group': {'enabled': False, 'min_confidence': 0},
+        'gender': {'enabled': False, 'min_confidence': 0},
+    },
+
+Note
+
+Contact our technical experts (support@ntechlab.com) for advice on min_confidence optimum value.
+
+If you decide that you do not need additional attribute analysis, then skip this configuration and proceed to the next step.
+
+In the FFSECURITY section, specify the body attributes that you want to display for the body recognition events.
+
+# available features: age_gender, bags, clothes, color, protective_equipment, fall, handface
+'BODY_EVENTS_FEATURES': ['age_gender', 'protective_equipment', 'clothes', 'fall', 'color', 'handface', 'bags'],
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+In the web interface, navigate to Video Source. Select a camera in the Cameras tab (or an uploaded file in the Uploads tab, or an external detector in the corresponding tab). Navigate to the General tab. Select Bodies in the Detectors section.
+
+          

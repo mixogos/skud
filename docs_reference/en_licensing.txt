@@ -1,0 +1,256 @@
+
+
+# Licensing
+
+In this chapter:
+
+Licensing Principles
+
+View and Update License
+
+Offline Licensing via USB dongle
+
+Sentinel Offline Software Licensing via Hardware Fingerprint
+
+Guardant Offline Software Licensing via Hardware Fingerprint
+
+## Licensing Principles
+
+The FindFace Multi licensing is granted using the following criteria:
+
+The overall number of extracted feature vectors, regardless of the object type (face, body, vehicle).
+
+Note
+
+The feature vectors are extracted from objects detected in the video, from images in the record index, and user photos, and when building so-called cluster centroids.
+
+The licensing scheme is the following:
+
+Events: 1 event of video object detection = 1 object in a license.
+
+Record Index: 1 photo in a record = 1 object in a license.
+
+Clusters: 1 face/body/vehicle = 1 object in a license.
+
+Users: 1 photo of a user = 1 object in a license.
+
+Face attribute recognition: gender/age/emotions/glasses/beard/face mask/etc.
+
+Body attribute recognition: clothing color/type/etc.
+
+Vehicle attribute recognition: make/model/color/body style/etc.
+
+License plate recognition.
+
+The total findface-extraction-api capacity (extapi limit).
+
+The total number of objects stored in all currently running tntapi instances (objects_tntapi limit).
+
+Face liveness detection.
+
+Video recording.
+
+The number of cameras with a given detector.
+
+Integrations with partners.
+
+Integration with external VMS.
+
+FindFace Multi functional modules: BI analytics, line crossing, alerts, maps.
+
+You can choose among the following licensing methods:
+
+The online licensing is provided by interaction with the NtechLab Global License Manager license.ntechlab.com and requires a stable internet connection, DNS, and open port 443 TCP. Upon being disconnected from the internet, the system will continue working off-grid for 4 hours.
+
+Note
+
+It is possible to prolongate the off-grid period for up to 2 days. Inform NtechLab support service at support@ntechlab.com if you need that.
+
+The offline licensing via a USB dongle requires a USB port on the physical server with the findface-ntls service (license server in the FindFace core).
+
+Sentinel offline software licensing via hardware fingerprint requires Sentinel drivers installed on the physical server with the findface-ntls service.
+
+Guardant offline software licensing via hardware fingerprint requires the Guardant Control Center installed on the physical server with the findface-ntls component.
+
+Important
+
+For the system to function, a single instance of findface-ntls should be enough. If your system requires more license servers, contact NtechLab support service beforehand to prevent your system from being blocked.
+
+## View and Update License
+
+After installing FindFace Multi, upload the license file you obtained from the support service (support@ntechlab.com) into the system. To do so, navigate to Settings → Licenses.
+
+[img:license_en]
+
+License interface allows working with multiple licenses at once, except for the Guardant offline licenses, implemented via a USB dongle. With multiple licenses, limits are combined. For your convenience, licenses have a color code:
+
+green: a valid license;
+
+yellow: a valid license that will expire in 60 days or less;
+
+red: an expired license.
+
+Attributes or modules, included into an expired license, are not displayed.
+
+[img:license_tabs_en]
+
+Use General, Licenses, Intervals, Services tabs to consult current licensing information.
+
+## Offline Licensing via USB dongle
+
+To implement the licensing via a USB dongle, do the following:
+
+Inform the support service (support@ntechlab.com) that you intend to apply this licensing method and request your USB dongle and a license file.
+
+Open the /opt/findface-multi/docker-compose.yaml configuration file.
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+
+Add the line privileged: true. Mount the /dev directory into the findface-multi-findface-ntls-1 container by listing it in the volumes of the findface-ntls section. As a result, the entire section will look as follows:
+
+findface-ntls:
+    command: [--config=/etc/findface-ntls.cfg]
+    image: docker.int.ntl/ntech/universe/ntls:ffserver-11.240325
+    logging: {driver: journald}
+    network_mode: service:pause
+    privileged: true
+    restart: always
+    user: root
+    volumes: ['./configs/findface-ntls/findface-ntls.yaml:/etc/findface-ntls.cfg:ro',
+      './data/findface-ntls:/ntech/license', '/dev:/dev']
+
+Create a new udev rule.
+
+Download the 95-grdnt.rules file (e.g., into the /home/username/tmp/ directory).
+
+Copy the 95-grdnt.rules file into the /etc/udev/rules.d/ directory.
+
+sudo cp /home/username/tmp/95-grdnt.rules /etc/udev/rules.d/
+
+Rebuild all FindFace Multi containers.
+
+cd /opt/findface-multi
+
+sudo docker-compose down
+
+sudo docker-compose up -d
+
+Insert the USB dongle into a USB port.
+
+Upload the license file by clicking the Upload file button in the Settings → Licenses tab.
+
+## Sentinel Offline Software Licensing via Hardware Fingerprint
+
+Note
+
+Sentinel is a type of offline licenses that do not require any physical media for its work.
+
+Glossary:
+
+Sentinel is a software protection and licensing system by Thales. It allows you to implement offline licensing without access to a global server.
+
+The C2V file is a file, containing data about a hardware fingerprint of the client’s machine, for binding the license only to this machine. This file is generated by the Sentinel library. The C2V file is generated on the client’s machine where the license key will be installed later.
+
+To implement the Sentinel fingerprint licensing, do the following:
+
+Inform the support service (support@ntechlab.com) that you intend to apply this licensing method and request your unique license ID. A support representative will also supply you with the vendor library package findface-sentinel-vlib-*.deb (Ubuntu/Debian). It is necessary for the FindFace Multi and Sentinel integration.
+
+Install the Sentinel drivers on the physical server with the findface-ntls component.
+
+Do the following:
+
+Download Sentinel drivers from the official website.
+
+Unzip the downloaded archive and browse it.
+
+tar -xvzf Sentinel_LDK_Linux_Run-time_Installer_script.tar.gz
+cd Sentinel_LDK_Linux_Run-time_Installer_script/
+
+There is another archive aksusbd-*.tar.gz inside the archive. Unzip it and browse to the resulting directory.
+
+tar -xvzf aksusbd-*.tar.gz
+cd aksusbd-*/
+
+Run the installation command.
+
+sudo ./dinst
+
+Run and check the statuses of the Sentinel services.
+
+sudo systemctl start aksusbd.service hasplmd.service
+sudo systemctl status aksusbd.service hasplmd.service
+
+Mount the /var/hasplm and /etc/hasplm directories into the findface-multi-findface-ntls-1 container. To do so, open the /opt/findface-multi/docker-compose.yaml configuration file and list them in the volumes of the findface-ntls section.
+
+sudo vi /opt/findface-multi/docker-compose.yaml
+
+findface-ntls:
+  ...
+  volumes: ['./configs/findface-ntls/findface-ntls.yaml:/etc/findface-ntls.cfg:ro', './data/findface-ntls:/ntech/license', '/var/hasplm:/var/hasplm', '/etc/hasplm:/etc/hasplm']
+
+Rebuild all FindFace Multi containers.
+
+cd /opt/findface-multi
+
+sudo docker-compose down
+
+sudo docker-compose up -d
+
+Put the findface-sentinel-vlib-*.deb package received from the support representative into some directory on the same host. Install the package. E.g., if you are running Ubuntu, execute:
+
+sudo dpkg -i /path/to/findface-sentinel-vlib-*.deb
+
+In the FindFace Multi web interface, navigate to Settings → Licenses. Take a hardware fingerprint (C2V file) by clicking the Download C2V → Sentinel button.
+
+Tip
+
+If you prefer working with the console, you can send the following API request to findface-ntls instead:
+
+wget <findface-ntls-server-ip>:3185/c2v
+
+Send the License ID and the C2V file to the support representative and receive your license file in return.
+
+Upload the license file by clicking the Upload file button in the Settings → Licenses tab.
+
+## Guardant Offline Software Licensing via Hardware Fingerprint
+
+Note
+
+This type of license is similar to Sentinel offline software licenses, but requires the Guardant service to function instead of Sentinel services.
+
+To implement the Guardant fingerprint licensing, follow these steps:
+
+Inform the support service (support@ntechlab.com) that you intend to use this licensing method and request your unique license ID.
+
+Install the Guardant Control Center on the physical server with the findface-ntls component.
+
+Do the following:
+
+Download Guardant Control Center from the official website. For Ubuntu/Debian, download the grdcontrol*.deb package. The most recent version that has been tested with is 3.27. Use later versions of Guardant Control Center, if any, at your own discretion.
+
+Install it. E.g., if you are running Ubuntu, execute:
+
+sudo dpkg -i /path/to/grdcontrol*.deb
+
+Make sure that the Guardant Control Center is up and running.
+On Ubuntu, you can do this as follows:
+
+sudo systemctl enable grdcontrol --now
+sudo systemctl status grdcontrol
+
+In the FindFace Multi web interface, navigate to Settings → Licenses. Take a hardware fingerprint (C2V file) by clicking the Download C2V → Guardant button.
+
+Tip
+
+If you prefer working with the console, you can send the following API request to findface-ntls instead:
+
+wget <findface-ntls-server-ip>:3185/c2v/guardant
+
+Warning
+
+Be aware that Sentinel c2v is not compatible with Guardant c2v and vice versa.
+
+Send the License ID and the C2V file to the support representative and receive your license file in return.
+
+Upload the license file by clicking the Upload file button in the Settings → Licenses tab.
+

@@ -1,0 +1,234 @@
+
+
+# Interpret Vehicle Recognition Results
+
+Vehicle recognition results can be accessed from the Episodes & Events tab of the web interface.
+
+In certain scenarios vehicle recognition results lack description attributes and their values, or it is displayed that the attribute value is unknown.
+
+The attribute value is unknown. If you see in the recognition results that the attribute value is unknown, it means that the attribute recognition confidence is below the threshold, specified for the attribute in the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file. The system will not display the recognized value in this case. Instead, the recognized value will be lost.
+
+You can configure the threshold for the vehicle attribute in the findface-multi-legacy.py configuration file.
+
+Important
+
+The above does not apply to the license plate recognition. License plate recognition threshold is set to the minimum value by default. If you see in the recognition results that the license plate number is unknown, it means that it’s hardly or not at all visible on the object. License plate country, region, and color recognition depends on the license plate number recognition results. The values of these attributes will remain unknown if the license plate number is unknown.
+
+Note
+
+License plate region is predicted for the United Arab Emirates (UAE) and Thailand. License plate color is predicted for Saudi Arabia only. The values of these attributes will be marked as unknown for other countries.
+
+Lack of description attributes and their values. If you do not see description attributes (i.e., vehicle make, body, model, color) and their values in the recognition results, it happens for the following reasons:
+
+Recognition of a vehicle category, as well as vehicle weight and body size recognition, is still under development. FindFace Multi accurately recognizes cars of category B and their attributes. When it comes to vehicle weight and body size, recognition of cars and trucks under 3.5 tons and their attributes is supported. However, the system can provide false positive results on other vehicle categories and weight classes and their description attributes. That’s why description attributes and their values are displayed for a car category only, and, when it comes to vehicle weight classes, for cars and trucks under 3.5 tons. For other vehicle categories and weight classes, the description attributes and their recognition values are hidden. The recognition confidence of the description attribute does not matter in this case – it can be below or above the threshold.
+
+The same thing happens if a vehicle category is unknown: description attributes along with recognition values will not be displayed. The recognition confidence of the description attribute is not a determining factor in this case.
+
+Subject to your needs, this behavior can be changed in the CAR_EVENTS_FEATURES_TO_NULL  section of the findface-multi-legacy.py configuration file.
+
+Read further to learn how to adjust the threshold for a vehicle attribute or to enable the display of description attributes for some or all vehicle categories and unknown vehicles.
+
+In this section:
+
+Configure Threshold for a Vehicle Attribute
+
+Configure Display of Description Attributes in the Recognition Results
+
+## Configure Threshold for a Vehicle Attribute
+
+The default threshold for each vehicle attribute is set to the optimum value. You can change it if necessary.
+
+Open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file. In the FFSECURITY section, modify threshold values for selected attributes:
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+FFSECURITY = {
+    ...
+    'CAR_DESCRIPTION_THRESHOLD': {
+        'make': 0.5,
+        'model': 0.5,
+        'body': 0.5,
+        'color': 0.5,
+    },  # model: [carattr.description.v1]
+    'SPECIAL_VEHICLE_TYPE_THRESHOLD': 0.5,  # model: [special_types12.v0]
+    'CAR_CATEGORY_THRESHOLD': 0.75,  # model: [carattr.categories.v1]
+    'CAR_WEIGHT_TYPE_THRESHOLD': 0.5,  # model: [weight-types7.v0]
+    'CAR_ORIENTATION_THRESHOLD': 0.8,  # model  [orientation.v0]
+    ...
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+## Configure Display of Description Attributes in the Recognition Results
+
+Based on your needs, you can enable the display of description attributes for unsupported vehicle categories or unknown vehicles. By default, the display of description attributes is enabled only for cars of the category B and for vehicles of the weight categories B_light (cars under 3.5 tons) and B_heavy (trucks under 3.5 tons). Use information from the tables to match a vehicle and its category or weight class.
+
+Vehicle categories
+
+Category
+
+Vehicle
+
+A
+
+motorcycle (including moped), scooter, quad bike
+
+B
+
+car
+
+BE
+
+car with a trailer
+
+C
+
+truck
+
+CE
+
+truck with a trailer
+
+D
+
+bus
+
+DE
+
+articulated bus
+
+other
+
+a vehicle that doesn’t fall within any of
+the above-listed types
+
+Vehicle weight classes
+
+Weight class
+
+Vehicle
+
+B_light
+
+car under 3.5 tons
+
+B_heavy
+
+truck under 3.5 tons
+
+BE
+
+car with a trailer
+
+C_light
+
+truck under 12 tons
+
+C_heavy
+
+truck over 12 tons
+
+D_light
+
+single-deck bus
+
+D_long
+
+articulated bus
+
+other
+
+a vehicle that doesn’t fall within any of
+the above-listed types
+
+Warning
+
+The default setting is set to the optimum value. Please contact our technical experts (support@ntechlab.com) before making any adjustment.
+
+To enable the display of description attributes for unsupported vehicle categories or unknown vehicles, open the /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py configuration file. In the FFSECURITY section, find the CAR_EVENTS_FEATURES_TO_NULL setting:
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+FFSECURITY = {
+    ...
+
+    'CAR_EVENTS_FEATURES_TO_NULL': {
+        'category': {
+            # features, that will be nulled for all categories
+            'default': ['make', 'body', 'model', 'color'],
+            'unknown': ['make', 'body', 'model', 'color'],
+            # categories with other behavior
+            'B': [],
+        },
+        'weight_type': {
+            # features, that will be nulled for all weight types
+            'default': ['make', 'body', 'model', 'color'],
+            # weight types with other behavior
+            'B_light': [],
+            'B_heavy': [],
+        },
+    },
+    ...
+
+To enable the display of description attributes, remove them from the selected parameter. E.g., if you want to display description attributes for all vehicle categories, except for unknown vehicles, remove them from the default parameter. Note that unknown vehicles are excluded from the default parameter and are configured through the unknown parameter.
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+FFSECURITY = {
+    ...
+
+    'CAR_EVENTS_FEATURES_TO_NULL': {
+        'category': {
+            # features, that will be nulled for all categories
+            'default': [],
+            'unknown': ['make', 'body', 'model', 'color'],
+            # categories with other behavior
+            'B': [],
+        },
+        'weight_type': {
+            # features, that will be nulled for all weight types
+            'default': [],
+            # weight types with other behavior
+            'B_light': [],
+            'B_heavy': [],
+        },
+    },
+    ...
+
+To enable the display of description attributes for a specific vehicle category or for a vehicle of a certain weight class, add its name to the exception within the categories with other behavior or the weight types with other behavior sections. Use information from the tables Vehicle categories and Vehicle weight classes  to match a vehicle and its category or weight class. E.g., if you want to add buses (category D) and single-deck buses (weight class D_light) to the exception, do the following:
+
+sudo vi /opt/findface-multi/configs/findface-multi-legacy/findface-multi-legacy.py
+
+FFSECURITY = {
+    ...
+
+    'CAR_EVENTS_FEATURES_TO_NULL': {
+        'category': {
+            # features, that will be nulled for all categories
+            'default': ['make', 'body', 'model', 'color'],
+            'unknown': ['make', 'body', 'model', 'color'],
+            # categories with other behavior
+            'B': [],
+            'D': [],
+        },
+        'weight_type': {
+            # features, that will be nulled for all weight types
+            'default': ['make', 'body', 'model', 'color'],
+            # weight types with other behavior
+            'B_light': [],
+            'B_heavy': [],
+            'D_light': [],
+        },
+    },
+    ...
+
+Restart all FindFace Multi containers.
+
+cd /opt/findface-multi/
+
+sudo docker-compose restart
+
+          
