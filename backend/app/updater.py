@@ -87,6 +87,11 @@ def apply() -> dict:
         with open(target, "wb") as out:
             for chunk in resp.iter_bytes(1 << 20):
                 out.write(chunk)
-    # Установщик сам закроет работающую программу (по AppMutex) и после установки запустит её снова.
-    subprocess.Popen([target, "/SILENT", "/NOCANCEL"], close_fds=True)
+    # Небольшая задержка, чтобы этот ответ успел дойти до интерфейса; затем установщик сам
+    # закроет все экземпляры СКУД на этом ПК, обновит программу и запустит её снова.
+    quoted = target.replace('"', '')
+    subprocess.Popen(
+        f'ping 127.0.0.1 -n 3 >nul & "{quoted}" /SILENT',
+        shell=True, creationflags=0x08000000,  # CREATE_NO_WINDOW — без мелькания консоли
+    )
     return {"started": True, "version": data.get("latest")}

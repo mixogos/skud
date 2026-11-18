@@ -3,7 +3,7 @@
 ; (сначала должна быть собрана папка dist\SKUD через PyInstaller)
 
 #define AppName "СКУД — распознавание лиц"
-#define AppVersion "0.9.3"
+#define AppVersion "0.9.4"
 #define AppExe "SKUD.exe"
 
 [Setup]
@@ -12,9 +12,9 @@ AppId={{A3F1C2E7-9B4D-4E6A-8C12-7D5E0F3A1B29}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher=СКУД
-; При обновлении закрыть работающую программу и запустить её снова после установки.
-AppMutex=Global\SKUD_App_Mutex
-CloseApplications=yes
+; При обновлении сами закрываем все запущенные экземпляры (см. [Code]), поэтому ручной
+; диалог «закройте приложение» не показываем. Запускаем программу снова после установки.
+CloseApplications=force
 RestartApplications=yes
 DefaultDirName={autopf}\SKUD
 DefaultGroupName=СКУД
@@ -47,3 +47,28 @@ Name: "{autodesktop}\СКУД"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "Запустить СКУД сейчас"; Flags: nowait postinstall skipifsilent
+; При тихом обновлении (автообновление) запускаем программу снова автоматически.
+Filename: "{app}\{#AppExe}"; Flags: nowait; Check: WizardSilent
+
+[Code]
+// Закрывает все запущенные на этом ПК экземпляры СКУД, чтобы обновление прошло без
+// ручного закрытия и без ошибок занятых файлов.
+procedure CloseAllSkud;
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{cmd}'), '/C taskkill /F /IM {#AppExe} /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(600);
+end;
+
+function InitializeSetup(): Boolean;
+begin
+  CloseAllSkud;  // до начала установки
+  Result := True;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssInstall then
+    CloseAllSkud;  // ещё раз прямо перед копированием файлов, если успели перезапустить
+end;
