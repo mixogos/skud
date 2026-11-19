@@ -173,6 +173,8 @@ class CameraGroup(Base):
     access_control: Mapped[bool] = mapped_column(Boolean, default=False)
     # Проверка живости: при подозрении на фото или экран в проходе отказывают.
     liveness_check: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Детекция людей (силуэтов) и их атрибутов — отдельно от лиц, ловит и тех, кто спиной.
+    detect_people: Mapped[bool] = mapped_column(Boolean, default=False)
     predefined: Mapped[bool] = mapped_column(Boolean, default=False)
     created_date: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     modified_date: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
@@ -307,6 +309,31 @@ class HumanEpisode(Base):
     video_archive_id: Mapped[int | None] = mapped_column(
         ForeignKey("video_archives.id", ondelete="CASCADE"), nullable=True, index=True
     )
+
+
+class PersonEvent(Base):
+    """Событие по человеку (силуэту): лучший кадр одного прохода с атрибутами внешнего вида."""
+
+    __tablename__ = "person_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_date: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    camera_group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("camera_groups.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    camera_id: Mapped[int | None] = mapped_column(ForeignKey("cameras.id", ondelete="SET NULL"), nullable=True, index=True)
+    track_duration: Mapped[float] = mapped_column(Float, default=0.0)
+    track_frames: Mapped[int] = mapped_column(Integer, default=1)
+    bbox: Mapped[list] = mapped_column(JSON, default=list)
+    frame_width: Mapped[int] = mapped_column(Integer, default=0)
+    frame_height: Mapped[int] = mapped_column(Integer, default=0)
+    detection_score: Mapped[float] = mapped_column(Float, default=0.0)
+    # Пол и признаки внешнего вида (пол, одежда, аксессуары, цвет одежды).
+    gender: Mapped[str | None] = mapped_column(String(8), nullable=True, index=True)
+    gender_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    attrs: Mapped[dict] = mapped_column(JSON, default=dict)  # hat, bag, coat, longsleeves, longpants, longhair → 0..1
+    upper_color: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)
+    lower_color: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)
 
 
 class Setting(Base):

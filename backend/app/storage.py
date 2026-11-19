@@ -59,6 +59,28 @@ def delete_counter_image(record_id: int) -> None:
     _counter_path(record_id).unlink(missing_ok=True)
 
 
+PEOPLE_DIR = config.DATA_DIR / "uploads" / "people"
+
+
+def _person_path(event_id: int) -> Path:
+    return PEOPLE_DIR / f"{int(event_id) // 1000:06d}" / f"{int(event_id)}.jpg"
+
+
+def save_person_image(event_id: int, data: bytes) -> None:
+    path = _person_path(event_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+
+
+def person_image(event_id: int) -> Path | None:
+    path = _person_path(event_id)
+    return path if path.is_file() else None
+
+
+def delete_person_image(event_id: int) -> None:
+    _person_path(event_id).unlink(missing_ok=True)
+
+
 def _face_path(face_id: int, kind: str) -> Path:
     assert kind in ("src", "thumb")
     return FACES_DIR / f"{int(face_id)}_{kind}.jpg"

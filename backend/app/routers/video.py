@@ -30,6 +30,7 @@ class CameraGroupCreate(BaseModel):
     face_threshold: float | None = Field(default=None, ge=0, le=1)
     access_control: bool = False
     liveness_check: bool = False
+    detect_people: bool = False
 
 
 class CameraGroupUpdate(BaseModel):
@@ -41,6 +42,7 @@ class CameraGroupUpdate(BaseModel):
     face_threshold: float | None = Field(default=None, ge=0, le=1)
     access_control: bool | None = None
     liveness_check: bool | None = None
+    detect_people: bool | None = None
 
 
 class CameraGroupOut(BaseModel):
@@ -55,6 +57,7 @@ class CameraGroupOut(BaseModel):
     face_threshold: float | None
     access_control: bool
     liveness_check: bool
+    detect_people: bool
     predefined: bool
     created_date: datetime
     modified_date: datetime

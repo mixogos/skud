@@ -8,6 +8,7 @@ import ComparePage from "./pages/Compare";
 import EpisodesPage from "./pages/Episodes";
 import EventsPage from "./pages/Events";
 import MonitorPage from "./pages/Monitor";
+import PeoplePage from "./pages/People";
 import ReportsPage from "./pages/Reports";
 import SettingsPage from "./pages/Settings";
 import VideosPage from "./pages/Videos";
@@ -82,6 +83,7 @@ function Login() {
 const NAV: { to: string; label: string; icon: string; perm?: string }[] = [
   { to: "/events", label: "События", icon: "events", perm: "faceevent:view" },
   { to: "/episodes", label: "Эпизоды", icon: "episodes", perm: "humanepisode:view" },
+  { to: "/people", label: "Люди", icon: "people", perm: "faceevent:view" },
   { to: "/cards", label: "Картотека", icon: "cards", perm: "humancard:view" },
   { to: "/watch-lists", label: "Списки наблюдения", icon: "lists", perm: "watchlist:view" },
   { to: "/videos", label: "Источники видео", icon: "video", perm: "videoarchive:view" },
@@ -145,6 +147,7 @@ function Shell() {
           <Routes>
             <Route path="/events" element={<EventsPage />} />
             <Route path="/episodes" element={<EpisodesPage />} />
+            <Route path="/people" element={<PeoplePage />} />
             <Route path="/cards" element={<CardsPage />} />
             <Route path="/watch-lists" element={<WatchListsPage />} />
             <Route path="/videos" element={<VideosPage />} />

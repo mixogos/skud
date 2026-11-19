@@ -176,6 +176,7 @@ function GroupModal({ group, onClose, onSaved }: { group: CameraGroup | null; on
   const [form, setForm] = useState({
     name: group?.name ?? "", comment: group?.comment ?? "", deduplicate: group?.deduplicate ?? false, deduplicate_delay: group?.deduplicate_delay ?? 15,
     access_control: group?.access_control ?? false, liveness_check: group?.liveness_check ?? false,
+    detect_people: group?.detect_people ?? false,
   });
   const [ownThreshold, setOwnThreshold] = useState(group?.face_threshold != null);
   const [threshold, setThreshold] = useState(Math.round((group?.face_threshold ?? 0.7) * 100));
@@ -204,6 +205,7 @@ function GroupModal({ group, onClose, onSaved }: { group: CameraGroup | null; on
         {form.access_control && (
           <Check label="Проверять живость лица: отказывать, если перед камерой фото или экран" checked={form.liveness_check} onChange={(v) => set({ liveness_check: v })} />
         )}
+        <Check label="Определять людей и одежду (силуэты, пол, аксессуары) — раздел «Люди»" checked={form.detect_people} onChange={(v) => set({ detect_people: v })} />
         <Check label="Не создавать повторные события одного человека" checked={form.deduplicate} onChange={(v) => set({ deduplicate: v })} />
         {form.deduplicate && (
           <Field label="Интервал, секунд" hint="Повторное появление человека в группе за это время не создаёт событие">

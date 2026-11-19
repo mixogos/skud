@@ -43,6 +43,7 @@ def main() -> int:
         model_store.download()
         model_store.download_liveness()
         model_store.download_attributes()
+        model_store.download_people()
         return 0
 
     init_db()

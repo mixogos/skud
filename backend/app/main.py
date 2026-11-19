@@ -15,6 +15,7 @@ from .routers import (
     cards,
     detectors,
     face_events,
+    people,
     recognition,
     reports,
     roles,
@@ -71,6 +72,7 @@ app.include_router(analytics.router)
 app.include_router(webhooks_router.router)
 app.include_router(reports.router)
 app.include_router(face_events.router)
+app.include_router(people.router)
 
 
 @app.get("/healthz", tags=["Служебное"])

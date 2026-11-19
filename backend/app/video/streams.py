@@ -26,6 +26,7 @@ from .. import config, events, models
 from ..db import SessionLocal
 from ..recognition import engine as eng
 from .analytics import CameraAnalytics
+from .people_stream import PeopleWatcher
 from .processor import TrackResult
 from .quality import face_quality
 from .tracker import FaceTracker, StreamSettings, Track
@@ -140,6 +141,7 @@ class CameraStream:
         self.width = self.height = 0
         self._last_frame: np.ndarray | None = None
         self.analytics = CameraAnalytics(camera_id)
+        self.people = PeopleWatcher(camera_id, group_id)
         self._times: deque[float] = deque(maxlen=50)
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name=f"camera-{camera_id}", daemon=True)
@@ -214,6 +216,7 @@ class CameraStream:
         reader.start()
         tracker = FaceTracker(self.settings)
         self.analytics.new_session()
+        self.people.new_session()
         interval = 1.0 / self.settings.process_fps
         started_wall, started = models.utcnow(), time.monotonic()
         seq, got = 0, False
@@ -234,6 +237,7 @@ class CameraStream:
                     frame, [face for face, _ in faces], tracker.tracks + finished, now, started_wall + timedelta(seconds=now)
                 )
                 self._register(engine, finished, started_wall)
+                self.people.on_frame(frame, now, started_wall + timedelta(seconds=now))
                 self._last_frame = frame
                 self.frames_processed += 1
                 self.last_frame_date = models.utcnow()
@@ -241,6 +245,7 @@ class CameraStream:
                 self._stop.wait(max(0.0, interval - (time.monotonic() - tick)))
             if got and not self._stop.is_set():
                 self._register(engine, tracker.flush(), started_wall)
+                self.people.finish(started_wall)
         finally:
             reader.stop_flag = True
         return got

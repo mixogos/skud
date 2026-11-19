@@ -51,6 +51,21 @@ ATTRIBUTE_SOURCES = {
 }
 
 
+# Детекция людей и их атрибутов (силуэты, одежда).
+PERSON_DETECTOR_FILE = "person_detector.onnx"  # YOLOv8n (CrowdHuman), класс «человек»
+PERSON_ATTR_FILE = "person_attributes.onnx"    # crossroad-0234: пол, одежда, аксессуары
+PEOPLE_SOURCES = {
+    PERSON_DETECTOR_FILE: (
+        "https://github.com/yakhyo/yolov8-crowdhuman/releases/download/weights/yolov8n_best.onnx",
+        "9d24faab26bebe6f25de708e235f02ec8733848cb0025ff67e60e4685a37e739",
+    ),
+    PERSON_ATTR_FILE: (
+        "https://github.com/mixogos/skud/releases/download/models-v1/person_attributes.onnx",
+        "5857170c60c73c7094ea253706e82fd85032be0c5c60ce6f1d74b59dc133d251",
+    ),
+}
+
+
 def models_dir() -> Path:
     return config.MODELS_DIR
 
@@ -81,6 +96,22 @@ def mask_present() -> bool:
 
 def fairface_present() -> bool:
     return (models_dir() / FAIRFACE_FILE).is_file()
+
+
+def person_detector_present() -> bool:
+    return (models_dir() / PERSON_DETECTOR_FILE).is_file()
+
+
+def person_attr_present() -> bool:
+    return (models_dir() / PERSON_ATTR_FILE).is_file()
+
+
+def download_people(progress=print) -> None:
+    """Скачивает модели детекции людей и атрибутов, сверяет контрольные суммы."""
+    models_dir().mkdir(parents=True, exist_ok=True)
+    for name, (url, sha256) in PEOPLE_SOURCES.items():
+        _fetch_verified(name, url, sha256, progress)
+    progress("Модели детекции людей на месте.")
 
 
 def _fetch_verified(name: str, url: str, sha256: str, progress) -> None:

@@ -4,7 +4,7 @@ import { auth, get } from "./api";
 
 export interface Me { id: number; name: string; real_name: string; role_name: string; is_superadmin: boolean; permissions: string[] }
 export interface WatchList { id: number; name: string; color: string; active: boolean; comment: string; face_threshold: number | null; acknowledge: boolean; notify: boolean; ignore_events: boolean; predefined: boolean; access_policy: "none" | "allow" | "deny"; access_schedule: Record<string, [string, string][]> }
-export interface CameraGroup { id: number; name: string; comment: string; active: boolean; deduplicate: boolean; deduplicate_delay: number; face_threshold: number | null; predefined: boolean; access_control: boolean; liveness_check: boolean }
+export interface CameraGroup { id: number; name: string; comment: string; active: boolean; deduplicate: boolean; deduplicate_delay: number; face_threshold: number | null; predefined: boolean; access_control: boolean; liveness_check: boolean; detect_people: boolean }
 export interface FeedMessage { type: string; data: any }
 type FeedHandler = (message: FeedMessage) => void;
 
