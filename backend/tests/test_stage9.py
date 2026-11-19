@@ -270,3 +270,31 @@ def test_people_motion_filter():
     for t in range(8):
         moving.update(frame, [PersonBox((50 + t * 40, 100, 110 + t * 40, 300), 0.9)], t * 0.5)
     assert moving.flush()[0].moved_enough is True
+
+
+def test_people_static_scene():
+    """Место, где центр силуэта почти в каждом проходе (картина), помечается «насиженным»,
+    даже если размер рамки дрожит; кратко мелькнувшее и место идущего человека — нет."""
+    from app.video import people_stream as ps
+    from app.recognition.people import PersonBox
+    W, H = 1280, 720
+    scene = ps.StaticScene()
+    painting = (813, 338, 927, 642)
+    for t in range(60):  # картина видна в каждом проходе; рамка слегка «гуляет» в размере
+        jit = (t % 3) * 8
+        boxes = [PersonBox((813 + jit, 338 + jit, 927 - jit, 642), 0.95)]
+        if t % 7 == 0:  # мимо изредка проходит посетитель в другом месте
+            boxes.append(PersonBox((100 + t, 300, 170 + t, 620), 0.8))
+        scene.observe(boxes, W, H)
+    assert scene.is_settled(painting) is True
+    assert scene.is_settled((700 + 60, 300, 770 + 60, 620)) is False  # случайное место прохода
+
+    brief = ps.StaticScene()
+    for t in range(6):  # мелькнул всего несколько проходов — карта ещё не набралась
+        brief.observe([PersonBox((400, 200, 460, 500), 0.9)], W, H)
+    assert brief.is_settled((400, 200, 460, 500)) is False
+
+    walking = ps.StaticScene()
+    for t in range(60):  # идёт через зал — центр каждый проход в новой ячейке
+        walking.observe([PersonBox((50 + t * 18, 200, 150 + t * 18, 600), 0.9)], W, H)
+    assert walking.is_settled((50 + 59 * 18, 200, 150 + 59 * 18, 600)) is False

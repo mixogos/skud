@@ -28,6 +28,20 @@ DIST_MAX = 0.8  # для быстрого движения: сопоставля
 # картины, статуи, плакаты и манекены; настоящий человек за проход заметно перемещается.
 MOVE_MIN = 0.2
 
+# Карта «насиженных» мест (занятость по центрам силуэтов). На фиксированной камере картины,
+# статуи, плакаты и манекены детектор видит как людей в одной и той же точке в каждом проходе.
+# Копим по сетке долю проходов, в которых центр какого-нибудь силуэта попадал в ячейку: у
+# обстановки центр почти всегда в одной точке (доля высокая), у проходящего посетителя центр
+# всё время смещается (в каждой ячейке он мельком — доля низкая). Накопление по центру, а не
+# по площади рамки, не размазывается по дорожкам, где просто часто ходят люди, и устойчиво к
+# дрожанию размеров рамки (детектор на картинах заметно «гуляет»). Считаем место обстановкой,
+# если силуэт держится там И при этом почти не перемещается за время трека.
+STATIC_GRID_W = 48      # сетка по ширине кадра
+STATIC_GRID_H = 27      # и по высоте
+STATIC_DECAY = 0.96     # инерция карты: чем ближе к 1, тем дольше помнит занятость
+STATIC_OCC_MIN = 0.28   # доля проходов с центром в точке, выше которой место «насиженное»
+STATIC_WARMUP = 20      # первые проходы карта ещё набирается — пока не судим
+
 
 def _iou(a, b) -> float:
     w = min(a[2], b[2]) - max(a[0], b[0])
@@ -127,6 +141,43 @@ class PeopleTracker:
         return finished
 
 
+class StaticScene:
+    """Карта «насиженных» мест кадра: куда центр силуэта попадает почти в каждом проходе —
+    там висит/стоит обстановка (картина, статуя, плакат, манекен), а не идёт посетитель.
+    Накопление по центру устойчиво к дрожанию размеров рамки и не размазывается по дорожкам."""
+
+    def __init__(self):
+        self._occ: np.ndarray | None = None  # доля проходов с центром силуэта в ячейке
+        self._passes = 0
+        self._w = self._h = 0
+
+    def _center_cell(self, bbox) -> tuple[int, int]:
+        cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+        c = min(STATIC_GRID_W - 1, max(0, int(cx / self._w * STATIC_GRID_W)))
+        r = min(STATIC_GRID_H - 1, max(0, int(cy / self._h * STATIC_GRID_H)))
+        return r, c
+
+    def observe(self, boxes: list[PersonBox], width: int, height: int) -> None:
+        if self._occ is None or self._w != width or self._h != height:
+            self._occ = np.zeros((STATIC_GRID_H, STATIC_GRID_W), np.float32)
+            self._w, self._h, self._passes = width, height, 0
+        self._passes += 1
+        hit = np.zeros((STATIC_GRID_H, STATIC_GRID_W), bool)
+        for box in boxes:
+            r, c = self._center_cell(box.bbox)
+            hit[r, c] = True
+        self._occ = self._occ * STATIC_DECAY + hit * (1 - STATIC_DECAY)
+
+    def is_settled(self, bbox) -> bool:
+        """Место «насиженное»: центр силуэта почти всегда тут. Берём пик по окрестности 3x3,
+        чтобы поймать точку, куда центр картины попадает чаще всего (он слегка гуляет по рамке)."""
+        if self._occ is None or self._passes < STATIC_WARMUP:
+            return False
+        r, c = self._center_cell(bbox)
+        peak = self._occ[max(0, r - 1):r + 2, max(0, c - 1):c + 2].max()
+        return float(peak) >= STATIC_OCC_MIN
+
+
 class PeopleWatcher:
     def __init__(self, camera_id: int, group_id: int):
         self.camera_id, self.group_id = camera_id, group_id
@@ -134,6 +185,7 @@ class PeopleWatcher:
         self.events_created = 0
         self.people_now = 0  # сколько людей в кадре на последнем проходе детектора
         self._tracker = PeopleTracker()
+        self._static = StaticScene()  # неподвижную обстановку помним и между переподключениями
         self._last_detect = -1e9
         self._enabled_checked = -1e9
 
@@ -163,6 +215,8 @@ class PeopleWatcher:
         try:
             boxes = analyzer.detect(frame)
             self.people_now = len(boxes)
+            h, w = frame.shape[:2]
+            self._static.observe(boxes, w, h)
             self._register(analyzer, self._tracker.update(frame, boxes, seconds), when - timedelta(seconds=seconds))
         except Exception:
             log.exception("Сбой детекции людей на камере %s", self.camera_id)
@@ -176,8 +230,10 @@ class PeopleWatcher:
         for track in tracks:
             if track.frames < MIN_TRACK_FRAMES or track.best_frame is None:
                 continue
+            if self._static.is_settled(track.best_bbox):
+                continue  # «насиженное» место — там всё время висит/стоит обстановка (картина, статуя, манекен)
             if not track.moved_enough:
-                continue  # неподвижный силуэт — скорее всего картина, статуя или плакат
+                continue  # отсев неподвижных силуэтов, пока карта «насиженных» мест ещё набирается
             feats = analyzer.attributes(track.best_frame, track.best_bbox)
             height, width = track.best_frame.shape[:2]
             gender = feats.get("gender", {})
