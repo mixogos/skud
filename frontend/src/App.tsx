@@ -10,6 +10,7 @@ import EventsPage from "./pages/Events";
 import MonitorPage from "./pages/Monitor";
 import PeoplePage from "./pages/People";
 import ReportsPage from "./pages/Reports";
+import SecurityPage from "./pages/Security";
 import SettingsPage from "./pages/Settings";
 import VideosPage from "./pages/Videos";
 import WatchListsPage from "./pages/WatchLists";
@@ -89,6 +90,7 @@ const NAV: { to: string; label: string; icon: string; perm?: string }[] = [
   { to: "/videos", label: "Источники видео", icon: "video", perm: "videoarchive:view" },
   { to: "/monitor", label: "Онлайн", icon: "monitor", perm: "camera:view" },
   { to: "/analytics", label: "Аналитика", icon: "chart", perm: "counter:view" },
+  { to: "/security", label: "Безопасность", icon: "shield", perm: "securityevent:view" },
   { to: "/reports", label: "Отчёты", icon: "report", perm: "report:view" },
   { to: "/compare", label: "Сравнение", icon: "compare" },
   { to: "/settings", label: "Настройки", icon: "settings" },
@@ -153,6 +155,7 @@ function Shell() {
             <Route path="/videos" element={<VideosPage />} />
             <Route path="/monitor" element={<MonitorPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/security" element={<SecurityPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/settings" element={<SettingsPage />} />

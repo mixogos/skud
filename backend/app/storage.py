@@ -81,6 +81,28 @@ def delete_person_image(event_id: int) -> None:
     _person_path(event_id).unlink(missing_ok=True)
 
 
+SECURITY_DIR = config.DATA_DIR / "uploads" / "security"
+
+
+def _security_path(event_id: int) -> Path:
+    return SECURITY_DIR / f"{int(event_id) // 1000:06d}" / f"{int(event_id)}.jpg"
+
+
+def save_security_image(event_id: int, data: bytes) -> None:
+    path = _security_path(event_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+
+
+def security_image(event_id: int) -> Path | None:
+    path = _security_path(event_id)
+    return path if path.is_file() else None
+
+
+def delete_security_image(event_id: int) -> None:
+    _security_path(event_id).unlink(missing_ok=True)
+
+
 def _face_path(face_id: int, kind: str) -> Path:
     assert kind in ("src", "thumb")
     return FACES_DIR / f"{int(face_id)}_{kind}.jpg"

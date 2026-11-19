@@ -27,6 +27,7 @@ const paths: Record<string, string> = {
   play: "M7 5l12 7-12 7z",
   chart: "M4 20V10M10 20V4M16 20v-7M21 20H3",
   monitor: "M3 5h18v12H3zM8 21h8M12 17v4",
+  shield: "M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z",
   people: "M16 17v-1a4 4 0 00-4-4H6a4 4 0 00-4 4v1M9 8a3 3 0 100-6 3 3 0 000 6M22 17v-1a4 4 0 00-3-3.85M16 2.3a4 4 0 010 7.6",
   download: "M12 4v11M8 11l4 4 4-4M5 19h14",
 };

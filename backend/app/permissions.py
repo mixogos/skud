@@ -19,6 +19,8 @@ ENTITIES = {
     "humanepisode": "Эпизоды с людьми",
     "counter": "Счётчики",
     "line": "Линии пересечения",
+    "securityrule": "Правила охранной аналитики",
+    "securityevent": "Охранные события",
     "webhook": "Вебхуки",
     "report": "Отчёты",
     "all_own_sessions": "Все свои сессии на разных устройствах",

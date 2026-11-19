@@ -27,6 +27,7 @@ from ..db import SessionLocal
 from ..recognition import engine as eng
 from .analytics import CameraAnalytics
 from .people_stream import PeopleWatcher
+from .security import SecurityWatcher
 from .processor import TrackResult
 from .quality import face_quality
 from .tracker import FaceTracker, StreamSettings, Track
@@ -142,6 +143,7 @@ class CameraStream:
         self._last_frame: np.ndarray | None = None
         self.analytics = CameraAnalytics(camera_id)
         self.people = PeopleWatcher(camera_id, group_id)
+        self.security = SecurityWatcher(camera_id)
         self._times: deque[float] = deque(maxlen=50)
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name=f"camera-{camera_id}", daemon=True)
@@ -217,6 +219,7 @@ class CameraStream:
         tracker = FaceTracker(self.settings)
         self.analytics.new_session()
         self.people.new_session()
+        self.security.new_session()
         interval = 1.0 / self.settings.process_fps
         started_wall, started = models.utcnow(), time.monotonic()
         seq, got = 0, False
@@ -238,6 +241,7 @@ class CameraStream:
                 )
                 self._register(engine, finished, started_wall)
                 self.people.on_frame(frame, now, started_wall + timedelta(seconds=now))
+                self.security.on_frame(frame, now, started_wall + timedelta(seconds=now))
                 self._last_frame = frame
                 self.frames_processed += 1
                 self.last_frame_date = models.utcnow()
@@ -327,6 +331,12 @@ class StreamManager:
         stream = self._streams.get(camera_id)
         if stream is not None:
             stream.analytics.dirty = True
+
+    def refresh_security(self, camera_id: int) -> None:
+        """Правила охранной аналитики изменились: поток перечитает их на следующем кадре."""
+        stream = self._streams.get(camera_id)
+        if stream is not None:
+            stream.security.dirty = True
 
     def get(self, camera_id: int) -> CameraStream | None:
         return self._streams.get(camera_id)

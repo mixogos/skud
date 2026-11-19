@@ -429,3 +429,49 @@ class LineCrossing(Base):
     matched_card_id: Mapped[int | None] = mapped_column(
         ForeignKey("human_cards.id", ondelete="SET NULL"), nullable=True, index=True
     )
+
+
+# --- Охранная аналитика ---
+class SecurityRule(Base):
+    """Правило охранной аналитики на камере: вторжение в зону, праздношатание,
+    скопление людей или саботаж камеры. Зона — многоугольник в долях кадра."""
+
+    __tablename__ = "security_rules"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(256))
+    camera_id: Mapped[int] = mapped_column(ForeignKey("cameras.id", ondelete="CASCADE"), index=True)
+    # intrusion | loitering | crowd | tampering
+    rule_type: Mapped[str] = mapped_column(String(16), index=True)
+    comment: Mapped[str] = mapped_column(String(2048), default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Многоугольник зоны: [[x, y], ...] в долях кадра. Пусто = весь кадр.
+    zone: Mapped[list] = mapped_column(JSON, default=list)
+    # Параметры: dwell_seconds (праздношатание), min_count (скопление), sensitivity (саботаж 1..100).
+    params: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_date: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    modified_date: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class SecurityEvent(Base):
+    """Охранная тревога: сработавшее правило, кадр и место."""
+
+    __tablename__ = "security_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_date: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    camera_id: Mapped[int | None] = mapped_column(ForeignKey("cameras.id", ondelete="SET NULL"), nullable=True, index=True)
+    rule_id: Mapped[int | None] = mapped_column(ForeignKey("security_rules.id", ondelete="SET NULL"), nullable=True, index=True)
+    rule_type: Mapped[str] = mapped_column(String(16), index=True)
+    rule_name: Mapped[str] = mapped_column(String(256), default="")
+    severity: Mapped[str] = mapped_column(String(8), default="alarm")  # alarm | warning
+    message: Mapped[str] = mapped_column(String(512), default="")
+    # Снимок места: зона и рамки людей в долях кадра — чтобы нарисовать на сохранённом кадре.
+    zone: Mapped[list] = mapped_column(JSON, default=list)
+    boxes: Mapped[list] = mapped_column(JSON, default=list)
+    frame_width: Mapped[int] = mapped_column(Integer, default=0)
+    frame_height: Mapped[int] = mapped_column(Integer, default=0)
+    has_image: Mapped[bool] = mapped_column(Boolean, default=False)
+    acknowledged: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    acknowledged_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    acknowledged_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

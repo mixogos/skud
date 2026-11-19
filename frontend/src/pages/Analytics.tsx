@@ -42,8 +42,9 @@ export default function AnalyticsPage() {
 }
 
 // --- Кадр камеры с рисованием поверх ---
-/** Показывает свежий кадр камеры; перетаскивание мышью сообщает начало и конец в долях кадра. */
-function Stage({ camera, onDrag, children }: { camera: Camera | undefined; onDrag?: (from: number[], to: number[]) => void; children?: ReactNode }) {
+/** Показывает свежий кадр камеры; перетаскивание мышью сообщает начало и конец в долях кадра,
+ * а клик без перетаскивания (onPoint) — одну точку: так добавляют вершины зоны. */
+export function Stage({ camera, onDrag, onPoint, children }: { camera: Camera | undefined; onDrag?: (from: number[], to: number[]) => void; onPoint?: (p: number[]) => void; children?: ReactNode }) {
   const [tick, setTick] = useState(0);
   const online = camera?.state === "ONLINE";
   useEffect(() => {
@@ -57,17 +58,27 @@ function Stage({ camera, onDrag, children }: { camera: Camera | undefined; onDra
   useEffect(() => setShown(null), [camera?.id]);
 
   const start = useRef<number[] | null>(null);
+  const moved = useRef(false);
   const point = (e: PointerEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     return [round(clamp((e.clientX - r.left) / r.width)), round(clamp((e.clientY - r.top) / r.height))];
   };
+  const active = onDrag || onPoint;
   const ratio = camera && camera.width > 0 ? `${camera.width}/${camera.height}` : "16/9";
   return (
     <div
-      className="stage" style={{ aspectRatio: ratio, cursor: onDrag ? "crosshair" : undefined }}
-      onPointerDown={onDrag && ((e) => { e.currentTarget.setPointerCapture(e.pointerId); start.current = point(e); })}
-      onPointerMove={onDrag && ((e) => { if (start.current) onDrag(start.current, point(e)); })}
-      onPointerUp={() => { start.current = null; }}
+      className="stage" style={{ aspectRatio: ratio, cursor: active ? "crosshair" : undefined }}
+      onPointerDown={active && ((e) => { e.currentTarget.setPointerCapture(e.pointerId); start.current = point(e); moved.current = false; })}
+      onPointerMove={active && ((e) => {
+        if (!start.current) return;
+        const p = point(e);
+        if (Math.abs(p[0] - start.current[0]) + Math.abs(p[1] - start.current[1]) > 0.01) moved.current = true;
+        if (onDrag) onDrag(start.current, p);
+      })}
+      onPointerUp={active && ((e) => {
+        if (start.current && onPoint && !moved.current) onPoint(point(e));
+        start.current = null;
+      })}
     >
       {shown
         ? <img src={shown} alt={`Кадр с камеры «${camera?.name}»`} draggable={false} />
@@ -77,7 +88,7 @@ function Stage({ camera, onDrag, children }: { camera: Camera | undefined; onDra
   );
 }
 
-function CameraSelect({ cameras, value, onChange }: { cameras: Camera[]; value: number; onChange: (id: number) => void }) {
+export function CameraSelect({ cameras, value, onChange }: { cameras: Camera[]; value: number; onChange: (id: number) => void }) {
   return (
     <Field label="Камера">
       <select className="input" value={value} onChange={(e) => onChange(Number(e.target.value))}>
