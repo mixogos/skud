@@ -180,7 +180,7 @@ def test_video_processing_end_to_end(client, admin, roles, video_file):
     with open(video_file, "rb") as fh:
         r = client.post(
             "/videos/", headers=admin,
-            data={"camera_group": group, "name": "Проходная, утро", "stream_settings": '{"process_fps": 5}'},
+            data={"camera_group": group, "name": "Проходная, утро", "stream_settings": '{"process_fps": 12}'},
             files={"source_file": ("Запись входа.mp4", fh, "video/mp4")},
         )
     assert r.status_code == 201, r.text
@@ -197,7 +197,7 @@ def test_video_processing_end_to_end(client, admin, roles, video_file):
     assert client.delete(f"/videos/{vid}/", headers=admin).status_code == 409
     done = wait_for(client, admin, vid, {"COMPLETED", "FAILED"})
     assert done["state"] == "COMPLETED", done
-    assert done["progress"] == 1.0 and done["events_created"] == 12 and done["frames_processed"] == 30
+    assert done["progress"] == 1.0 and done["events_created"] == 12 and done["frames_processed"] == 60
     assert done["started_date"] and done["finished_date"]
 
     events = client.get("/events/faces/", headers=admin, params={"video_archive": vid}).json()

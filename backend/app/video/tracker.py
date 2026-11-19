@@ -10,7 +10,7 @@ from ..recognition.engine import Face
 class StreamSettings(BaseModel):
     """Параметры обработки видео (аналог параметров видеопотока в FindFace Multi)."""
 
-    process_fps: float = Field(default=5.0, gt=0, le=60, description="Сколько кадров в секунду анализировать")
+    process_fps: float = Field(default=12.0, gt=0, le=60, description="Сколько кадров в секунду анализировать")
     min_quality: float = Field(default=0.4, ge=0, le=1, description="Минимальное качество лучшего кадра для события")
     min_track_frames: int = Field(default=2, ge=1, description="Минимум кадров в треке (отсекает ложные срабатывания)")
     max_track_gap: float = Field(default=1.0, gt=0, description="Через сколько секунд без лица трек завершается")
