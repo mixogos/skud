@@ -255,3 +255,18 @@ def test_stream_counts_faces_and_line_crossings(client, admin, video_file, peopl
     assert client.delete(f"/counters/{whole}/", headers=admin).status_code == 204
     assert records(whole)["count"] == 0
     assert client.get(f"/counter-records/{record['id']}/image/", headers=admin).status_code == 404
+
+
+def test_people_motion_filter():
+    """Неподвижный силуэт (картина, статуя) отсеивается; движущийся человек проходит."""
+    from app.video import people_stream as ps
+    from app.recognition.people import PersonBox
+    frame = np.zeros((480, 640, 3), np.uint8)
+    static = ps.PeopleTracker()
+    for t in range(8):
+        static.update(frame, [PersonBox((300, 100, 360, 300), 0.9)], t * 0.5)
+    assert static.flush()[0].moved_enough is False
+    moving = ps.PeopleTracker()
+    for t in range(8):
+        moving.update(frame, [PersonBox((50 + t * 40, 100, 110 + t * 40, 300), 0.9)], t * 0.5)
+    assert moving.flush()[0].moved_enough is True

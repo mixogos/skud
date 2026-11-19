@@ -23,6 +23,10 @@ DETECT_INTERVAL = 0.5   # как часто искать людей, секун�
 MIN_TRACK_FRAMES = 2    # минимум обнаружений, чтобы создать событие (отсекает ложные)
 MAX_TRACK_GAP = 1.5     # через сколько секунд без человека трек завершается
 IOU_MIN = 0.3
+DIST_MAX = 0.8  # для быстрого движения: сопоставляем трек и рамку по близости центров
+# Минимальное смещение за время трека в долях роста силуэта: неподвижные «люди» — это
+# картины, статуи, плакаты и манекены; настоящий человек за проход заметно перемещается.
+MOVE_MIN = 0.2
 
 
 def _iou(a, b) -> float:
@@ -32,6 +36,14 @@ def _iou(a, b) -> float:
         return 0.0
     inter = w * h
     return inter / ((a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter)
+
+
+def _center_dist(a, b) -> float:
+    """Расстояние между центрами в долях размера большей рамки."""
+    ax, ay = (a[0] + a[2]) / 2, (a[1] + a[3]) / 2
+    bx, by = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
+    size = max(a[2] - a[0], a[3] - a[1], b[2] - b[0], b[3] - b[1], 1)
+    return float(np.hypot(ax - bx, ay - by)) / size
 
 
 @dataclass
@@ -45,6 +57,8 @@ class _Track:
     best_bbox: tuple | None = None
     best_frame: np.ndarray | None = field(default=None, repr=False)
     best_score: float = 0.0
+    start_center: tuple | None = None
+    max_move: float = 0.0
 
     def offer(self, frame: np.ndarray, box: PersonBox) -> None:
         left, top, right, bottom = box.bbox
@@ -52,9 +66,22 @@ class _Track:
         if area > self.best_area:  # самый крупный кадр — лучший для атрибутов
             self.best_area, self.best_bbox, self.best_frame, self.best_score = area, box.bbox, frame, box.score
 
+    def note_position(self) -> None:
+        """Запоминает смещение центра силуэта относительно первого появления."""
+        cx, cy = (self.bbox[0] + self.bbox[2]) / 2, (self.bbox[1] + self.bbox[3]) / 2
+        if self.start_center is None:
+            self.start_center = (cx, cy)
+        else:
+            self.max_move = max(self.max_move, float(np.hypot(cx - self.start_center[0], cy - self.start_center[1])))
+
     @property
     def duration(self) -> float:
         return self.last_time - self.first_time
+
+    @property
+    def moved_enough(self) -> bool:
+        height = max(1, (self.best_bbox or self.bbox)[3] - (self.best_bbox or self.bbox)[1])
+        return self.max_move >= MOVE_MIN * height
 
 
 class PeopleTracker:
@@ -63,25 +90,30 @@ class PeopleTracker:
         self._next_id = 1
 
     def update(self, frame: np.ndarray, boxes: list[PersonBox], time: float) -> list[_Track]:
-        free = list(range(len(self._tracks)))
-        pairs = sorted(
-            ((_iou(self._tracks[t].bbox, b.bbox), t, i) for t in free for i, b in enumerate(boxes)),
-            reverse=True,
-        )
-        taken_box = set()
-        for score, t, i in pairs:
-            if score < IOU_MIN or t not in free or i in taken_box:
-                continue
-            track, box = self._tracks[t], boxes[i]
-            track.bbox, track.last_time, track.frames = box.bbox, time, track.frames + 1
-            track.offer(frame, box)
-            free.remove(t)
-            taken_box.add(i)
-        for i, box in enumerate(boxes):
-            if i in taken_box:
-                continue
-            track = _Track(self._next_id, time, time, box.bbox)
-            track.offer(frame, box)
+        free_tracks = list(range(len(self._tracks)))
+        free_boxes = list(range(len(boxes)))
+
+        def assign(score_fn, accept) -> None:
+            pairs = sorted(
+                ((score_fn(self._tracks[t].bbox, boxes[i].bbox), t, i) for t in free_tracks for i in free_boxes),
+                reverse=True,
+            )
+            for score, t, i in pairs:
+                if accept(score) and t in free_tracks and i in free_boxes:
+                    track, box = self._tracks[t], boxes[i]
+                    track.bbox, track.last_time, track.frames = box.bbox, time, track.frames + 1
+                    track.offer(frame, box)
+                    track.note_position()
+                    free_tracks.remove(t)
+                    free_boxes.remove(i)
+
+        # Сначала по пересечению рамок, затем — для быстрого движения — по близости центров.
+        assign(_iou, lambda s: s >= IOU_MIN)
+        assign(lambda a, b: -_center_dist(a, b), lambda s: -s <= DIST_MAX)
+        for i in free_boxes:
+            track = _Track(self._next_id, time, time, boxes[i].bbox)
+            track.offer(frame, boxes[i])
+            track.note_position()
             self._next_id += 1
             self._tracks.append(track)
         finished, alive = [], []
@@ -144,6 +176,8 @@ class PeopleWatcher:
         for track in tracks:
             if track.frames < MIN_TRACK_FRAMES or track.best_frame is None:
                 continue
+            if not track.moved_enough:
+                continue  # неподвижный силуэт — скорее всего картина, статуя или плакат
             feats = analyzer.attributes(track.best_frame, track.best_bbox)
             height, width = track.best_frame.shape[:2]
             gender = feats.get("gender", {})
