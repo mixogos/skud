@@ -15,6 +15,9 @@ class SettingsUpdate(BaseModel):
     unmatched_events_enabled: bool | None = None
     unmatched_acknowledge: bool | None = None
     liveness_threshold: float | None = None
+    dedup_window: int | None = None
+    unmatched_liveness_filter: bool | None = None
+    unmatched_liveness_min: float | None = None
     episode_event_timeout: int | None = None
     episode_max_duration: int | None = None
 

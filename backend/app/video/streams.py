@@ -22,9 +22,10 @@ import cv2
 import numpy as np
 from sqlalchemy import select
 
-from .. import config, events, models
+from .. import access, config, events, matching, models
 from ..db import SessionLocal
 from ..recognition import engine as eng
+from ..settings_store import get_settings
 from .analytics import CameraAnalytics
 from .people_stream import PeopleWatcher
 from .security import SecurityWatcher
@@ -141,6 +142,8 @@ class CameraStream:
         self.last_frame_date: datetime | None = None
         self.width = self.height = 0
         self._last_frame: np.ndarray | None = None
+        self._overlay: list[tuple[tuple[int, int, int, int], bool]] = []  # (рамка лица, тревога) для онлайн-видео
+        self._alerts: dict[int, bool] = {}  # track_id → показывать красным (список наблюдения / отказ в проходе)
         self.analytics = CameraAnalytics(camera_id)
         self.people = PeopleWatcher(camera_id, group_id)
         self.security = SecurityWatcher(camera_id)
@@ -163,10 +166,16 @@ class CameraStream:
             return 0.0
         return round((len(times) - 1) / max(times[-1] - times[0], 1e-6), 1)
 
-    def snapshot(self, max_side: int = 960) -> bytes | None:
+    def snapshot(self, max_side: int = 960, boxes: bool = False) -> bytes | None:
         frame = self._last_frame
         if frame is None:
             return None
+        if boxes and self._overlay:
+            frame = frame.copy()
+            thick = max(2, round(frame.shape[1] / 480))
+            for (left, top, right, bottom), alert in self._overlay:
+                color = (40, 40, 230) if alert else (60, 200, 70)  # BGR: красный на тревоге, иначе зелёный
+                cv2.rectangle(frame, (left, top), (right, bottom), color, thick)
         scale = max_side / max(frame.shape[:2])
         if scale < 1:
             frame = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
@@ -236,6 +245,7 @@ class CameraStream:
                     self._set_state("ONLINE")
                 faces = [(face, face_quality(frame, face)) for face in engine.detect(frame)]
                 finished = tracker.update(frame, faces, now)
+                self._update_overlay(engine, tracker.tracks, now)
                 self.analytics.on_frame(
                     frame, [face for face, _ in faces], tracker.tracks + finished, now, started_wall + timedelta(seconds=now)
                 )
@@ -254,12 +264,42 @@ class CameraStream:
             reader.stop_flag = True
         return got
 
+    def _update_overlay(self, engine: eng.FaceEngine, live: list[Track], now: float) -> None:
+        """Готовит рамки лиц для онлайн-видео: зелёные, красные — для списков наблюдения и отказа в проходе.
+
+        Цвет определяется один раз на трек по лучшему кадру (сопоставление с картотекой), затем кэшируется.
+        """
+        try:
+            for track in live:
+                if track.id in self._alerts or track.best_face is None or track.best_quality < self.settings.min_quality:
+                    continue
+                if track.best_face.embedding is None:
+                    engine.extract(track.best_frame, [track.best_face])
+                vector = np.asarray(track.best_face.embedding, dtype=np.float32)
+                with SessionLocal() as db:
+                    group = db.get(models.CameraGroup, self.group_id)
+                    settings = get_settings(db)
+                    match = matching.find_match(db, vector, models.utcnow(), group, settings)
+                    alert = match is not None and any(wl.access_policy == "deny" for wl in match.watch_lists)
+                    if group is not None and group.access_control:
+                        decision, _ = access.decide(match, models.utcnow())
+                        alert = alert or decision == "denied"
+                self._alerts[track.id] = alert
+        except Exception:
+            log.exception("Сбой разметки лиц в онлайн-видео камеры %s", self.camera_id)
+        self._overlay = [(tuple(int(v) for v in t.bbox), self._alerts.get(t.id, False))
+                         for t in live if t.last_time == now]
+        alive_ids = {t.id for t in live}
+        for track_id in [k for k in self._alerts if k not in alive_ids]:
+            self._alerts.pop(track_id, None)
+
     def _register(self, engine: eng.FaceEngine, tracks: list[Track], started_wall: datetime) -> None:
         for track in tracks:
             if track.frames < self.settings.min_track_frames or track.best_quality < self.settings.min_quality:
                 self.analytics.on_track_finished(track, track.successor_id, None, None)
                 continue
-            engine.extract(track.best_frame, [track.best_face])
+            if track.best_face.embedding is None:
+                engine.extract(track.best_frame, [track.best_face])
             result = TrackResult(
                 track_id=track.id, face=track.best_face, frame=track.best_frame, quality=track.best_quality,
                 time=track.best_time, first_time=track.first_time, duration=track.duration, frames=track.frames,

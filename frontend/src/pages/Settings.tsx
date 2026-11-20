@@ -120,6 +120,22 @@ function General() {
         <h2>Лица без совпадения</h2>
         <Check label="Создавать события для людей, которых нет в картотеке" checked={form.unmatched_events_enabled} onChange={(v) => set({ unmatched_events_enabled: v })} />
         <Check label="Требовать принятия таких событий оператором" checked={form.unmatched_acknowledge} onChange={(v) => set({ unmatched_acknowledge: v })} />
+        <Check label="Отсеивать картины и фото по проверке живости" checked={form.unmatched_liveness_filter}
+          onChange={(v) => set({ unmatched_liveness_filter: v })} />
+        {form.unmatched_liveness_filter && (
+          <Field label={`Порог отсева: ${Math.round((form.unmatched_liveness_min ?? 0.35) * 100)}%`}
+            hint="Лицо без совпадения с оценкой живости ниже порога считается картиной, фото или экраном — событие не создаётся. Ниже порог — строже отсев, но выше риск отсеять настоящее лицо.">
+            <input type="range" min={5} max={80} value={Math.round((form.unmatched_liveness_min ?? 0.35) * 100)}
+              onChange={(e) => set({ unmatched_liveness_min: Number(e.target.value) / 100 })} style={{ accentColor: "var(--accent)" }} />
+          </Field>
+        )}
+      </div>
+      <div className="panel col">
+        <h2>Удержание человека</h2>
+        <Field label="Не создавать повторное событие того же лица, секунд"
+          hint="Пока человек в кадре или ненадолго вышел, его повторное появление в той же группе камер в течение этого времени не плодит новых событий (определяется по математической модели лица). 0 — отключить.">
+          <input className="input" type="number" min={0} max={3600} value={form.dedup_window ?? 0} onChange={(e) => set({ dedup_window: Number(e.target.value) })} />
+        </Field>
       </div>
       <div className="panel col">
         <h2>Эпизоды</h2>

@@ -17,6 +17,17 @@ class RuntimeSettings(BaseModel):
         default=0.5, ge=0, le=1,
         description="Порог живости: ниже него лицо считается подделкой (фото или экран)",
     )
+    dedup_window: int = Field(
+        default=10, ge=0, le=3600,
+        description="Удержание человека: столько секунд повторное появление того же лица не создаёт нового события (0 — выкл)",
+    )
+    unmatched_liveness_filter: bool = Field(
+        default=True, description="Отсеивать картины и фото среди событий без совпадения по оценке живости",
+    )
+    unmatched_liveness_min: float = Field(
+        default=0.35, ge=0, le=1,
+        description="Порог живости для отсева картин и фото (события без совпадения с картотекой)",
+    )
     episode_event_timeout: int = Field(
         default=30, ge=1, le=3600, description="Эпизод закрывается, если столько секунд нет новых событий"
     )

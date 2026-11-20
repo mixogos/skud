@@ -31,6 +31,11 @@ def client():
     face_index.invalidate()
     with SessionLocal() as db:
         create_superadmin(db, ADMIN["name"], ADMIN["password"])
+        # Удержание человека и отсев картин по живости меняют число событий — в тестах,
+        # которые считают события по фото, выключаем их; свои тесты включают явно.
+        from app.settings_store import update_settings
+        update_settings(db, {"dedup_window": 0, "unmatched_liveness_filter": False})
+        db.commit()
     with TestClient(app) as c:
         yield c
 

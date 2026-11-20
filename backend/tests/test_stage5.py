@@ -328,6 +328,8 @@ def test_settings_api(client, admin, roles):
     assert current == {
         "face_confidence_threshold": 0.7, "unmatched_events_enabled": True, "unmatched_acknowledge": False,
         "episode_event_timeout": 30, "episode_max_duration": 300, "liveness_threshold": 0.5,
+        # dedup_window и unmatched_liveness_filter выключены в conftest (по умолчанию включены).
+        "dedup_window": 0, "unmatched_liveness_filter": False, "unmatched_liveness_min": 0.35,
     }
     r = client.patch("/settings/", headers=admin, json={"episode_event_timeout": 60})
     assert r.json()["episode_event_timeout"] == 60 and r.json()["face_confidence_threshold"] == 0.7

@@ -165,7 +165,7 @@ def camera_mjpeg(camera_id: int, db: DbSession = Depends(get_db), _: models.User
         empty = 0
         while True:
             stream = stream_manager.get(camera_id)
-            data = stream.snapshot() if stream is not None else None
+            data = stream.snapshot(boxes=True) if stream is not None else None
             if data is None:
                 empty += 1
                 if empty > 200:  # ~20 секунд без кадров — закрываем поток

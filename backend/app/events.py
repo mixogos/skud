@@ -24,14 +24,16 @@ def _is_duplicate(
     when: datetime,
     video_archive_id: int | None,
     threshold: float,
+    window: float,
 ) -> bool:
-    """Дедупликация: тот же человек уже отмечен в этой группе камер за последние секунды."""
-    if group is None or not group.deduplicate:
+    """Дедупликация (удержание человека): тот же человек уже отмечен в этой группе камер
+    за последние `window` секунд — повторное событие не создаём."""
+    if group is None or window <= 0:
         return False
     E = models.FaceEvent
     conds = [
         E.camera_group_id == group.id,
-        E.created_date >= when - timedelta(seconds=group.deduplicate_delay),
+        E.created_date >= when - timedelta(seconds=window),
         E.created_date <= when,
         E.video_archive_id.is_(None) if video_archive_id is None else E.video_archive_id == video_archive_id,
     ]
@@ -115,8 +117,14 @@ def process_track(
     else:
         if not settings.unmatched_events_enabled:
             return skip("События без совпадения отключены")
+        # Отсев картин и фото: плоское изображение лица проваливает проверку живости.
+        if settings.unmatched_liveness_filter and result.liveness is not None \
+                and result.liveness < settings.unmatched_liveness_min:
+            return skip("Отсеяно как возможная подделка: картина, фото или экран")
         needs_ack = settings.unmatched_acknowledge
-    if _is_duplicate(db, group, match, vector, created_date, video_archive_id, threshold):
+    # Удержание человека: группа со своей дедупликацией — её окно, иначе общее окно настроек.
+    window = group.deduplicate_delay if (group is not None and group.deduplicate) else settings.dedup_window
+    if _is_duplicate(db, group, match, vector, created_date, video_archive_id, threshold, window):
         return skip("Повторное событие (дедупликация)")
     if result.features is None:
         analyzer = get_attributes()
