@@ -142,8 +142,9 @@ class CameraStream:
         self.last_frame_date: datetime | None = None
         self.width = self.height = 0
         self._last_frame: np.ndarray | None = None
-        self._overlay: list[tuple[tuple[int, int, int, int], bool]] = []  # (рамка лица, тревога) для онлайн-видео
-        self._alerts: dict[int, bool] = {}  # track_id → показывать красным (список наблюдения / отказ в проходе)
+        self._reader: "_Reader | None" = None  # поток-читатель кадров: онлайн берёт свежий кадр отсюда
+        self._overlay: list[tuple[tuple[int, int, int, int], str]] = []  # (рамка лица, цвет) для онлайн-видео
+        self._alerts: dict[int, str] = {}  # track_id → цвет рамки: green (из картотеки) / gray (нет в картотеке) / red (тревога)
         self.analytics = CameraAnalytics(camera_id)
         self.people = PeopleWatcher(camera_id, group_id)
         self.security = SecurityWatcher(camera_id)
@@ -167,14 +168,19 @@ class CameraStream:
         return round((len(times) - 1) / max(times[-1] - times[0], 1e-6), 1)
 
     def snapshot(self, max_side: int = 960, boxes: bool = False) -> bytes | None:
-        frame = self._last_frame
+        # Онлайн-видео берёт самый свежий кадр читателя (частота камеры), а не последний
+        # проанализированный (частота анализа). Так картинка плавная даже когда анализ
+        # идёт медленно; рамки накладываются из последнего анализа и чуть отстают.
+        reader = self._reader
+        frame = reader.frame if reader is not None and reader.frame is not None else self._last_frame
         if frame is None:
             return None
         if boxes and self._overlay:
             frame = frame.copy()
             thick = max(2, round(frame.shape[1] / 480))
-            for (left, top, right, bottom), alert in self._overlay:
-                color = (40, 40, 230) if alert else (60, 200, 70)  # BGR: красный на тревоге, иначе зелёный
+            for (left, top, right, bottom), mark in self._overlay:
+                # BGR: зелёный — из картотеки, серый — нет в картотеке, красный — тревога.
+                color = {"green": (60, 200, 70), "red": (40, 40, 230)}.get(mark, (150, 150, 150))
                 cv2.rectangle(frame, (left, top), (right, bottom), color, thick)
         scale = max_side / max(frame.shape[:2])
         if scale < 1:
@@ -225,6 +231,7 @@ class CameraStream:
             pace = 1.0 / fps if fps and 0 < fps <= 240 else 0.04
         reader = _Reader(capture, pace)
         reader.start()
+        self._reader = reader
         with SessionLocal() as db:
             rt = get_settings(db)
         # Удержание человека: трек держится hold_seconds даже когда лицо на время пропало.
@@ -267,12 +274,15 @@ class CameraStream:
                 self.people.finish(started_wall)
         finally:
             reader.stop_flag = True
+            self._reader = None
         return got
 
     def _update_overlay(self, engine: eng.FaceEngine, live: list[Track], now: float) -> None:
-        """Готовит рамки лиц для онлайн-видео: зелёные, красные — для списков наблюдения и отказа в проходе.
+        """Готовит рамки лиц для онлайн-видео.
 
-        Цвет определяется один раз на трек по лучшему кадру (сопоставление с картотекой), затем кэшируется.
+        Зелёная — человек из картотеки (совпадение с карточкой) без тревоги.
+        Серая — кого в картотеке нет. Красная — тревога (список-запрет, отказ в проходе).
+        Цвет определяется один раз на трек по лучшему кадру и кэшируется.
         """
         try:
             for track in live:
@@ -289,10 +299,11 @@ class CameraStream:
                     if group is not None and group.access_control:
                         decision, _ = access.decide(match, models.utcnow())
                         alert = alert or decision == "denied"
-                self._alerts[track.id] = alert
+                # Красный — тревога; зелёный — из картотеки; серый — кого в картотеке нет.
+                self._alerts[track.id] = "red" if alert else ("green" if match is not None else "gray")
         except Exception:
             log.exception("Сбой разметки лиц в онлайн-видео камеры %s", self.camera_id)
-        self._overlay = [(tuple(int(v) for v in t.bbox), self._alerts.get(t.id, False))
+        self._overlay = [(tuple(int(v) for v in t.bbox), self._alerts.get(t.id, "gray"))
                          for t in live if t.last_time == now]
         alive_ids = {t.id for t in live}
         for track_id in [k for k in self._alerts if k not in alive_ids]:
