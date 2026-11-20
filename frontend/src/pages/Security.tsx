@@ -14,13 +14,14 @@ interface SecEvent {
   rule_name: string; severity: "alarm" | "warning"; message: string; zone: number[][]; boxes: number[][];
   frame_width: number; frame_height: number; has_image: boolean; acknowledged: boolean;
 }
-type RuleType = "intrusion" | "loitering" | "crowd" | "tampering";
+type RuleType = "intrusion" | "loitering" | "crowd" | "tampering" | "abandoned";
 
 const TYPES: Record<RuleType, { label: string; zone: boolean; hint: string }> = {
   intrusion: { label: "Вторжение в зону", zone: true, hint: "Тревога, когда человек входит в запретную зону." },
   loitering: { label: "Праздношатание", zone: true, hint: "Тревога, когда человек задерживается в зоне дольше заданного времени." },
   crowd: { label: "Скопление людей", zone: true, hint: "Тревога, когда в зоне одновременно больше заданного числа людей." },
   tampering: { label: "Саботаж камеры", zone: false, hint: "Тревога при перекрытии обзора, расфокусировке или резком сдвиге камеры — следится весь кадр, зона не нужна." },
+  abandoned: { label: "Оставленные предметы", zone: true, hint: "Тревога, когда в зоне появляется неподвижный предмет без человека рядом и остаётся дольше заданного времени." },
 };
 const round = (v: number) => Math.round(v * 10000) / 10000;
 
@@ -42,7 +43,7 @@ export default function SecurityPage() {
 }
 
 // --- Лента тревог ---
-const FILTERS: [string, string][] = [["", "Все"], ["intrusion", "Вторжение"], ["loitering", "Праздношатание"], ["crowd", "Скопление"], ["tampering", "Саботаж"]];
+const FILTERS: [string, string][] = [["", "Все"], ["intrusion", "Вторжение"], ["loitering", "Праздношатание"], ["crowd", "Скопление"], ["tampering", "Саботаж"], ["abandoned", "Предметы"]];
 
 function Alarms({ cameras }: { cameras: Camera[] }) {
   const { can } = useApp();
@@ -163,6 +164,7 @@ function paramSummary(r: Rule): string {
   if (r.rule_type === "loitering") return `задержка ${r.params.dwell_seconds ?? 10} с`;
   if (r.rule_type === "crowd") return `порог ${r.params.min_count ?? 3} чел.`;
   if (r.rule_type === "tampering") return `чувствительность ${r.params.sensitivity ?? 50}`;
+  if (r.rule_type === "abandoned") return `задержка ${r.params.dwell_seconds ?? 30} с`;
   return "—";
 }
 
@@ -245,6 +247,18 @@ function RuleModal({ rule, cameras, onClose, onSaved }: { rule: Rule | null; cam
           <Field label={`Чувствительность: ${form.params.sensitivity ?? 50}`} hint="Выше — строже реагирует на перекрытие, расфокус и сдвиг">
             <input type="range" min={1} max={100} value={form.params.sensitivity ?? 50} onChange={(e) => setParam("sensitivity", Number(e.target.value))} style={{ width: "100%" }} />
           </Field>
+        )}
+        {form.rule_type === "abandoned" && (
+          <div className="row">
+            <div className="grow"><Field label="Задержка, секунд" hint="Сколько предмет стоит без присмотра до тревоги">
+              <input className="input" type="number" min={5} max={600} value={form.params.dwell_seconds ?? 30} onChange={(e) => setParam("dwell_seconds", Number(e.target.value))} />
+            </Field></div>
+            <div className="grow"><Field label="Мин. размер, % кадра" hint="Предметы мельче этого не считаются">
+              <input className="input" type="number" min={0.1} max={20} step={0.1}
+                value={Math.round((form.params.min_area ?? 0.004) * 1000) / 10}
+                onChange={(e) => setParam("min_area", Number(e.target.value) / 100)} />
+            </Field></div>
+          </div>
         )}
 
         <Field label="Комментарий"><input className="input" value={form.comment} onChange={(e) => set({ comment: e.target.value })} maxLength={2048} /></Field>

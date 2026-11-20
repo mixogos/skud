@@ -29,12 +29,14 @@ RULE_COOLDOWN = 15.0    # секунд: одно и то же правило н�
 EVENT_IMAGE_SIDE = 640
 PERSON_TYPES = {"intrusion", "loitering", "crowd"}
 
-SEVERITY = {"intrusion": "alarm", "tampering": "alarm", "loitering": "warning", "crowd": "warning"}
+SEVERITY = {"intrusion": "alarm", "tampering": "alarm", "abandoned": "alarm",
+            "loitering": "warning", "crowd": "warning"}
 TITLE = {
     "intrusion": "Вторжение в зону",
     "loitering": "Праздношатание",
     "crowd": "Скопление людей",
     "tampering": "Саботаж камеры",
+    "abandoned": "Оставленный предмет",
 }
 
 
@@ -123,6 +125,114 @@ class TamperDetector:
 
 
 @dataclass
+class _Candidate:
+    """Неподвижная область-кандидат в оставленный предмет (всё в долях кадра)."""
+    id: int
+    cx: float
+    cy: float
+    bbox: list
+    area: float          # доля площади кадра
+    first_seen: float    # когда область впервые стала неподвижной
+    last_seen: float
+
+
+class AbandonedDetector:
+    """Оставленные предметы: по двум фоновым моделям — быстрой и медленной — ищет области,
+    которые недавно появились и перестали двигаться, не относятся к людям и держатся на месте.
+
+    Область, отличная от «медленного» фона, но уже совпавшая с «быстрым», — это предмет,
+    который поставили и который стоит неподвижно. Пока он стоит, медленный фон под ним
+    заморожен, поэтому предмет виден всё время; после уноса область быстро очищается.
+    """
+
+    BW = 240
+    TAU_FAST = 1.5       # c — постоянная времени быстрого фона
+    TAU_SLOW = 120.0     # c — постоянная времени медленного фона
+    DIFF = 28.0          # порог отличия яркости от фона
+    MATCH_DIST = 0.06    # доля кадра: допустимое смещение того же предмета между кадрами
+    GONE = 2.0           # c без наблюдения — кандидат забывается
+
+    def __init__(self):
+        self._fast: np.ndarray | None = None
+        self._slow: np.ndarray | None = None
+        self._last = 0.0
+        self._cands: list[_Candidate] = []
+        self._next_id = 1
+
+    def new_session(self) -> None:
+        self._fast = self._slow = None
+        self._cands.clear()
+
+    def _prep(self, frame: np.ndarray) -> tuple[np.ndarray, int, int]:
+        h, w = frame.shape[:2]
+        bw = self.BW
+        bh = max(1, int(bw * h / w))
+        gray = cv2.cvtColor(cv2.resize(frame, (bw, bh)), cv2.COLOR_BGR2GRAY)
+        return cv2.GaussianBlur(gray, (5, 5), 0).astype(np.float32), bw, bh
+
+    def update(self, frame: np.ndarray, person_boxes: list, seconds: float, min_area_frac: float) -> list[_Candidate]:
+        gray, bw, bh = self._prep(frame)
+        if self._slow is None:
+            self._fast, self._slow, self._last = gray.copy(), gray.copy(), seconds
+            return []
+        dt = max(1e-3, seconds - self._last)
+        self._last = seconds
+        a_fast = 1.0 - float(np.exp(-dt / self.TAU_FAST))
+        a_slow = 1.0 - float(np.exp(-dt / self.TAU_SLOW))
+        static = (np.abs(gray - self._slow) > self.DIFF) & (np.abs(gray - self._fast) < self.DIFF)
+        # Убрать людей (с небольшим запасом вокруг силуэта).
+        fh, fw = frame.shape[:2]
+        for pb in person_boxes:
+            l, t, r, b = pb.bbox if hasattr(pb, "bbox") else pb
+            x1, y1 = max(0, int(l / fw * bw) - 4), max(0, int(t / fh * bh) - 4)
+            x2, y2 = min(bw, int(r / fw * bw) + 4), min(bh, int(b / fh * bh) + 4)
+            static[y1:y2, x1:x2] = False
+        mask = static.astype(np.uint8)
+        kernel = np.ones((3, 3), np.uint8)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+        # Быстрый фон обновляем везде; медленный — только вне неподвижных областей (замораживаем под предметом).
+        self._fast += a_fast * (gray - self._fast)
+        free = mask == 0
+        self._slow[free] += (a_slow * (gray - self._slow))[free]
+
+        min_area_px = max(8, int(min_area_frac * bw * bh))
+        count, _labels, stats, centroids = cv2.connectedComponentsWithStats(mask, 8)
+        found = []
+        for i in range(1, count):
+            area = int(stats[i, cv2.CC_STAT_AREA])
+            x, y = int(stats[i, cv2.CC_STAT_LEFT]), int(stats[i, cv2.CC_STAT_TOP])
+            ww, hh = int(stats[i, cv2.CC_STAT_WIDTH]), int(stats[i, cv2.CC_STAT_HEIGHT])
+            if area < min_area_px or ww >= bw * 0.9 or hh >= bh * 0.9:
+                continue  # слишком мелкое или на весь кадр (свет/тень) — пропускаем
+            found.append((float(centroids[i][0]) / bw, float(centroids[i][1]) / bh,
+                          [x / bw, y / bh, (x + ww) / bw, (y + hh) / bh], area / (bw * bh)))
+
+        active, used = [], set()
+        for cand in self._cands:
+            best, best_d = None, self.MATCH_DIST
+            for idx, (cx, cy, _bbox, _ar) in enumerate(found):
+                if idx in used:
+                    continue
+                d = ((cx - cand.cx) ** 2 + (cy - cand.cy) ** 2) ** 0.5
+                if d < best_d:
+                    best, best_d = idx, d
+            if best is not None:
+                used.add(best)
+                cand.cx, cand.cy, cand.bbox, cand.area = found[best]
+                cand.last_seen = seconds
+                active.append(cand)
+            elif seconds - cand.last_seen <= self.GONE:
+                active.append(cand)  # пропал на кадр-другой — не теряем
+        for idx, (cx, cy, bbox, ar) in enumerate(found):
+            if idx not in used:
+                active.append(_Candidate(self._next_id, cx, cy, bbox, ar, seconds, seconds))
+                self._next_id += 1
+        self._cands = active
+        return [c for c in self._cands if c.last_seen == seconds]
+
+
+@dataclass
 class _Rule:
     id: int
     name: str
@@ -138,6 +248,7 @@ class SecurityWatcher:
     rules: list[_Rule] = field(default_factory=list)
     _tracker: PeopleTracker = field(default_factory=PeopleTracker)
     _tamper: TamperDetector = field(default_factory=TamperDetector)
+    _abandon: AbandonedDetector = field(default_factory=AbandonedDetector)
     _last_detect: float = -1e9
     _last_tamper: float = -1e9
     # (rule_id, track_id) → был ли силуэт в зоне на прошлом проходе / уже тревожили
@@ -145,16 +256,19 @@ class SecurityWatcher:
     _loiter_since: dict = field(default_factory=dict)
     _alarmed: dict = field(default_factory=dict)
     _crowd_since: dict = field(default_factory=dict)
+    _abandon_alarmed: dict = field(default_factory=dict)  # (rule_id, cand_id) → уже тревожили
     _cooldown: dict = field(default_factory=dict)  # rule_id → время последней тревоги
 
     def new_session(self) -> None:
         self._tracker = PeopleTracker()
         self._tamper.new_session()
+        self._abandon.new_session()
         self._last_detect = self._last_tamper = -1e9
         self._inside.clear()
         self._loiter_since.clear()
         self._alarmed.clear()
         self._crowd_since.clear()
+        self._abandon_alarmed.clear()
 
     def _reload(self) -> None:
         self.dirty = False
@@ -170,6 +284,10 @@ class SecurityWatcher:
     def _person_rules(self) -> list[_Rule]:
         return [r for r in self.rules if r.type in PERSON_TYPES]
 
+    @property
+    def _abandoned_rules(self) -> list[_Rule]:
+        return [r for r in self.rules if r.type == "abandoned"]
+
     def on_frame(self, frame: np.ndarray, seconds: float, when: datetime) -> None:
         if self.dirty:
             self._reload()
@@ -180,13 +298,16 @@ class SecurityWatcher:
             if tamper_rules and seconds - self._last_tamper >= TAMPER_INTERVAL:
                 self._last_tamper = seconds
                 self._check_tamper(tamper_rules, frame, seconds, when)
-            if self._person_rules and seconds - self._last_detect >= DETECT_INTERVAL:
+            if (self._person_rules or self._abandoned_rules) and seconds - self._last_detect >= DETECT_INTERVAL:
                 analyzer = get_people()
                 if analyzer is not None:
                     self._last_detect = seconds
                     boxes = analyzer.detect(frame)
-                    tracks = self._tracker.update(frame, boxes, seconds)  # завершённые нам не нужны
-                    self._check_persons(frame, seconds, when)
+                    if self._person_rules:
+                        self._tracker.update(frame, boxes, seconds)  # завершённые нам не нужны
+                        self._check_persons(frame, seconds, when)
+                    if self._abandoned_rules:
+                        self._check_abandoned(boxes, frame, seconds, when)
         except Exception:
             log.exception("Сбой охранной аналитики камеры %s", self.camera_id)
 
@@ -259,6 +380,33 @@ class SecurityWatcher:
                             self._norm_boxes([t.bbox for t in in_zone], width, height), when)
         else:
             self._crowd_since.pop(rule.id, None)
+
+    # --- Оставленные предметы ---
+    def _check_abandoned(self, person_boxes, frame, seconds, when) -> None:
+        rules = self._abandoned_rules
+        min_area = min(float(r.params.get("min_area", 0.004)) for r in rules)  # ищем для самого «мелкого» правила
+        cands = self._abandon.update(frame, person_boxes, seconds, min_area)
+        live_ids = {c.id for c in cands}
+        for rule in rules:
+            dwell = float(rule.params.get("dwell_seconds", 30))
+            area_min = float(rule.params.get("min_area", 0.004))
+            for cand in cands:
+                if cand.area < area_min:
+                    continue
+                key = (rule.id, cand.id)
+                cx = (cand.bbox[0] + cand.bbox[2]) / 2
+                cy = (cand.bbox[1] + cand.bbox[3]) / 2
+                if not point_in_polygon(rule.zone, (cx, cy)):
+                    continue
+                if seconds - cand.first_seen >= dwell and not self._abandon_alarmed.get(key):
+                    self._abandon_alarmed[key] = True
+                    if not self._on_cooldown(rule.id, seconds):
+                        self._cooldown[rule.id] = seconds
+                        box = [round(float(v), 4) for v in cand.bbox]
+                        self._raise(rule, f"{rule.name}: предмет без присмотра дольше {int(dwell)} с", frame, [box], when)
+        for key in list(self._abandon_alarmed):  # забыть тревоги по унесённым предметам
+            if key[1] not in live_ids:
+                self._abandon_alarmed.pop(key, None)
 
     # --- Общее ---
     def _on_cooldown(self, rule_id: int, seconds: float) -> bool:

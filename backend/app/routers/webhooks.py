@@ -15,7 +15,7 @@ from ..schemas import Page
 router = APIRouter(prefix="/webhooks", tags=["Вебхуки"])
 
 
-RuleType = Literal["intrusion", "loitering", "crowd", "tampering"]
+RuleType = Literal["intrusion", "loitering", "crowd", "tampering", "abandoned"]
 Severity = Literal["alarm", "warning"]
 
 

@@ -3,7 +3,7 @@ import { del, fmtDate, get, Page, patch, post, useLoad } from "../api";
 import { useApp } from "../ctx";
 import { Check, Empty, ErrorBox, Field, Icon, Modal, Seg, useAction, useToast } from "../ui";
 
-type RuleType = "intrusion" | "loitering" | "crowd" | "tampering";
+type RuleType = "intrusion" | "loitering" | "crowd" | "tampering" | "abandoned";
 type Severity = "alarm" | "warning";
 interface SecurityFilters { rule_types: RuleType[]; severity: Severity[] }
 interface Filters {
@@ -11,7 +11,8 @@ interface Filters {
   cameras: number[]; access: "granted" | "denied" | null; security: SecurityFilters;
 }
 const RULE_LABELS: [RuleType, string][] = [
-  ["intrusion", "Вторжение в зону"], ["loitering", "Праздношатание"], ["crowd", "Скопление людей"], ["tampering", "Саботаж камеры"],
+  ["intrusion", "Вторжение в зону"], ["loitering", "Праздношатание"], ["crowd", "Скопление людей"],
+  ["tampering", "Саботаж камеры"], ["abandoned", "Оставленные предметы"],
 ];
 interface Hook {
   id: number; name: string; url: string; active: boolean; filters: Filters; has_secret: boolean; send_attempts: number;

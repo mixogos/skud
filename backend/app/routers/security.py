@@ -16,8 +16,8 @@ from ..video.streams import stream_manager
 
 router = APIRouter(tags=["Охранная аналитика"])
 
-RULE_TYPES = {"intrusion", "loitering", "crowd", "tampering"}
-ZONE_TYPES = {"intrusion", "loitering", "crowd"}  # нужна зона (кроме саботажа — весь кадр)
+RULE_TYPES = {"intrusion", "loitering", "crowd", "tampering", "abandoned"}
+ZONE_TYPES = {"intrusion", "loitering", "crowd", "abandoned"}  # нужна зона (кроме саботажа — весь кадр)
 
 
 def _naive(value: datetime | None) -> datetime | None:
@@ -60,6 +60,9 @@ def _clean_params(rule_type: str, params: dict) -> dict:
         out["hold_seconds"] = int(min(60, max(0, params.get("hold_seconds", 3))))
     elif rule_type == "tampering":
         out["sensitivity"] = int(min(100, max(1, params.get("sensitivity", 50))))
+    elif rule_type == "abandoned":
+        out["dwell_seconds"] = int(min(600, max(5, params.get("dwell_seconds", 30))))
+        out["min_area"] = round(min(0.2, max(0.0005, float(params.get("min_area", 0.004)))), 4)
     return out
 
 
