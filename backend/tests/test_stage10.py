@@ -113,6 +113,48 @@ def test_crowd_over_threshold(client):
     assert _events(camera_id, "crowd") == 1  # один раз (далее срабатывает выдержка кулдауна)
 
 
+def _frame_with_object(obj=None):
+    """Пустой тёмный кадр; если задан obj=(x1,y1,x2,y2) — яркий неподвижный прямоугольник."""
+    frame = np.zeros((720, 1280, 3), np.uint8)
+    if obj is not None:
+        x1, y1, x2, y2 = obj
+        frame[y1:y2, x1:x2] = 255
+    return frame
+
+
+def _run_abandoned(camera_id, obj, person_boxes, frames=40):
+    w = sec.SecurityWatcher(camera_id)
+    w._reload()
+    t = 0.0
+    w._check_abandoned(person_boxes, _frame_with_object(None), t, WHEN)  # первый кадр — инициализация фона
+    for _ in range(frames):
+        t += 0.5
+        w._check_abandoned(person_boxes, _frame_with_object(obj), t, WHEN + timedelta(seconds=t))
+    return _events(camera_id, "abandoned")
+
+
+def test_abandoned_fires_after_dwell(client):
+    # Предмет появляется в зоне и стоит без присмотра — одна тревога после выдержки.
+    camera_id = _make_camera_and_rule("abandoned", {"dwell_seconds": 2})
+    inside = (560, 340, 720, 500)  # центр ~(0.5, 0.58) — внутри зоны
+    assert _run_abandoned(camera_id, inside, []) == 1
+
+
+def test_abandoned_suppressed_by_person(client):
+    # Человек стоит на месте предмета — это не оставленный предмет, тревоги нет.
+    camera_id = _make_camera_and_rule("abandoned", {"dwell_seconds": 2})
+    inside = (560, 340, 720, 500)
+    person = PersonBox((520, 300, 760, 540), 0.9)  # накрывает предмет с запасом
+    assert _run_abandoned(camera_id, inside, [person]) == 0
+
+
+def test_abandoned_ignores_outside_zone(client):
+    # Предмет вне зоны — тревоги нет.
+    camera_id = _make_camera_and_rule("abandoned", {"dwell_seconds": 2})
+    outside = (40, 340, 200, 500)  # центр x ~0.09 — слева от зоны
+    assert _run_abandoned(camera_id, outside, []) == 0
+
+
 def test_security_rule_api(client, admin):
     group = client.post("/camera-groups/", json={"name": "Охрана"}, headers=admin).json()
     cam = client.post(
