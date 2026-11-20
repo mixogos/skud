@@ -69,6 +69,66 @@ def test_tracker_max_duration_splits_track():
     assert len(finished) == 2  # человек стоит перед камерой 2,2 с — события каждую секунду
 
 
+# --- Удержание человека (сверка по вектору признаков) ---
+def id_face(left, top, ident, size=100):
+    """Лицо с «личностью» — её читает FakeEngine при извлечении вектора."""
+    face = eng.Face((left, top, left + size, top + size), 0.9, geometry.ARCFACE_TEMPLATE.copy())
+    face._ident = ident
+    return face
+
+
+class FakeEngine:
+    """Подменяет извлечение вектора: одинаковой личности — один и тот же единичный вектор."""
+
+    def extract(self, frame, faces):
+        for face in faces:
+            vec = np.zeros(16, np.float32)
+            vec[ord(getattr(face, "_ident", "?")) % 16] = 1.0  # одинаковый ident → косинус 1
+            face.embedding = vec
+
+
+def test_hold_keeps_person_through_gap():
+    engine = FakeEngine()
+    tracker = FaceTracker(StreamSettings(max_track_gap=1.0), hold_seconds=5.0, hold_threshold=0.9)
+    frame = np.zeros((10, 10, 3), np.uint8)
+    finished = []
+    for t in (0.0, 0.2, 0.4):
+        finished += tracker.update(frame, [(id_face(100, 100, "A"), 0.5)], t, engine)
+    assert finished == []
+    # Лицо пропало дольше max_track_gap — человек удерживается, трек не завершён.
+    finished += tracker.update(frame, [], 2.0, engine)
+    assert finished == [] and tracker.tracks == []
+    # Тот же человек вернулся (чуть сместился) — продолжается прежний трек, а не новый.
+    finished += tracker.update(frame, [(id_face(115, 100, "A"), 0.6)], 2.2, engine)
+    assert finished == [] and len(tracker.tracks) == 1
+    assert tracker.tracks[0].frames == 4
+    # Окончательно ушёл — одно событие на все 4 кадра.
+    finished += tracker.update(frame, [], 8.0, engine)
+    assert len(finished) == 1 and finished[0].frames == 4
+
+
+def test_hold_does_not_merge_different_people():
+    engine = FakeEngine()
+    tracker = FaceTracker(StreamSettings(max_track_gap=1.0), hold_seconds=5.0, hold_threshold=0.9)
+    frame = np.zeros((10, 10, 3), np.uint8)
+    for t in (0.0, 0.2):
+        tracker.update(frame, [(id_face(100, 100, "A"), 0.5)], t, engine)
+    tracker.update(frame, [], 1.5, engine)  # A пропал — удерживается
+    # В том же месте появился другой человек — его не принимают за удерживаемого.
+    tracker.update(frame, [(id_face(100, 100, "B"), 0.5)], 1.7, engine)
+    assert len(tracker.tracks) == 1 and tracker.tracks[0].best_face._ident == "B"
+    finished = tracker.update(frame, [], 10.0, engine)
+    assert sorted(t.best_face._ident for t in finished) == ["A", "B"]  # два отдельных события
+
+
+def test_hold_off_without_engine():
+    # Без движка (трекинг тел) удержание не работает: трек завершается по max_track_gap.
+    tracker = FaceTracker(StreamSettings(max_track_gap=1.0), hold_seconds=5.0, hold_threshold=0.9)
+    frame = np.zeros((10, 10, 3), np.uint8)
+    tracker.update(frame, [(fake_face(100, 100), 0.5)], 0.0)
+    assert len(tracker.update(frame, [], 2.0)) == 1
+
+
 # --- Качество кадра ---
 def test_pose_score_prefers_frontal():
     frontal = geometry.ARCFACE_TEMPLATE.copy()

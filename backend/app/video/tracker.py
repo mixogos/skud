@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from pydantic import BaseModel, Field
 
-from ..recognition.engine import Face
+from ..recognition.engine import Face, confidence
 
 
 class StreamSettings(BaseModel):
@@ -63,13 +63,28 @@ class FaceTracker:
     IOU_MIN = 0.2
     DISTANCE_MAX = 0.8
 
-    def __init__(self, settings: StreamSettings):
+    def __init__(self, settings: StreamSettings, hold_seconds: float = 0.0, hold_threshold: float = 0.0):
         self.settings = settings
+        # Удержание человека: когда лицо на время пропадает (отвернулся, заслонили),
+        # трек не завершается сразу, а hold_seconds секунд ждёт возвращения того же лица
+        # (сверка по вектору признаков — «математическая модель» лица). Это не даёт
+        # создать второе событие на одного и того же человека. Работает только для
+        # трекинга лиц — когда в update передан движок; для трекинга тел выключено.
+        self.hold_seconds = max(0.0, hold_seconds)
+        self.hold_threshold = hold_threshold
         self._tracks: list[Track] = []
+        self._held: list[Track] = []  # удерживаемые треки: лицо пропало, но человек ещё «ведётся»
         self._next_id = 1
 
-    def update(self, frame: np.ndarray, faces: list[tuple[Face, float]], time: float) -> list[Track]:
-        """Принимает лица очередного кадра (с оценками качества). Возвращает завершившиеся треки."""
+    def update(
+        self, frame: np.ndarray, faces: list[tuple[Face, float]], time: float, engine=None
+    ) -> list[Track]:
+        """Принимает лица очередного кадра (с оценками качества). Возвращает завершившиеся треки.
+
+        Если передан `engine` и включено удержание, пропавшие на время лица не создают
+        новых треков: при возвращении того же человека продолжается прежний трек.
+        """
+        holding = engine is not None and self.hold_seconds > 0 and self.hold_threshold > 0
         free_tracks = list(range(len(self._tracks)))
         free_faces = list(range(len(faces)))
 
@@ -91,6 +106,10 @@ class FaceTracker:
         assign(_iou, lambda s: s >= self.IOU_MIN)
         assign(lambda a, b: -_center_distance(a, b), lambda s: -s <= self.DISTANCE_MAX)
 
+        # Удержание: оставшиеся лица пробуем узнать среди удерживаемых — по вектору признаков.
+        if holding and self._held and free_faces:
+            self._revive(frame, faces, free_faces, time, engine)
+
         for f in free_faces:
             face, quality = faces[f]
             track = Track(self._next_id, time, time, face.bbox)
@@ -103,15 +122,67 @@ class FaceTracker:
         for track in self._tracks:
             lost = time - track.last_time > self.settings.max_track_gap
             too_long = limit > 0 and track.duration >= limit
-            (finished if lost or too_long else alive).append(track)
-            if too_long and not lost:
-                # Человек ещё в кадре: его ведёт трек-продолжение, чтобы не потерять траекторию.
-                follower = Track(self._next_id, time, track.last_time, track.bbox, frames=0)
-                track.successor_id = follower.id
-                self._next_id += 1
-                alive.append(follower)
+            if too_long:
+                finished.append(track)
+                if not lost:
+                    # Человек ещё в кадре: его ведёт трек-продолжение, чтобы не потерять траекторию.
+                    follower = Track(self._next_id, time, track.last_time, track.bbox, frames=0)
+                    track.successor_id = follower.id
+                    self._next_id += 1
+                    alive.append(follower)
+            elif lost:
+                # Лицо пропало: удерживаем человека (ждём возвращения), иначе завершаем сразу.
+                (self._held if holding else finished).append(track)
+            else:
+                alive.append(track)
         self._tracks = alive
+        # Удерживаемые, не вернувшиеся за hold_seconds, — завершаем.
+        if self._held:
+            kept = []
+            for track in self._held:
+                (finished if time - track.last_time > self.hold_seconds else kept).append(track)
+            self._held = kept
         return finished
+
+    def _revive(self, frame, faces, free_faces: list[int], time: float, engine) -> None:
+        """Возвращает к жизни удерживаемый трек, если среди новых лиц есть тот же человек."""
+        fresh = [faces[f][0] for f in free_faces if faces[f][0].embedding is None]
+        if fresh:
+            engine.extract(frame, fresh)
+        for track in self._held:
+            bf = track.best_face
+            if bf is not None and bf.embedding is None and track.best_frame is not None:
+                engine.extract(track.best_frame, [bf])
+        pairs = []
+        for hi, track in enumerate(self._held):
+            bf = track.best_face
+            if bf is None or bf.embedding is None:
+                continue
+            hv = np.asarray(bf.embedding, dtype=np.float32)
+            for f in free_faces:
+                fv = faces[f][0].embedding
+                if fv is None:
+                    continue
+                sim = confidence(hv, np.asarray(fv, dtype=np.float32))
+                if sim >= self.hold_threshold:
+                    pairs.append((sim, hi, f))
+        if not pairs:
+            return
+        pairs.sort(key=lambda p: p[0], reverse=True)
+        used_h, used_f = set(), set()
+        for _sim, hi, f in pairs:
+            if hi in used_h or f in used_f:
+                continue
+            track, (face, quality) = self._held[hi], faces[f]
+            track.prev_bbox, track.bbox, track.last_time = track.bbox, face.bbox, time
+            track.frames += 1
+            track.offer(frame, face, quality, time)
+            self._tracks.append(track)
+            used_h.add(hi)
+            used_f.add(f)
+        self._held = [t for i, t in enumerate(self._held) if i not in used_h]
+        for f in sorted(used_f, reverse=True):
+            free_faces.remove(f)
 
     @property
     def tracks(self) -> list[Track]:
@@ -120,5 +191,5 @@ class FaceTracker:
 
     def flush(self) -> list[Track]:
         """Завершает все оставшиеся треки (конец видео)."""
-        finished, self._tracks = self._tracks, []
+        finished, self._tracks, self._held = self._tracks + self._held, [], []
         return finished

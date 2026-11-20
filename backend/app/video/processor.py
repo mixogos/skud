@@ -80,10 +80,12 @@ def analyze_video(
     settings: StreamSettings,
     on_progress: Callable[[float, int], None] | None = None,
     should_stop: Callable[[], bool] | None = None,
+    hold_seconds: float = 0.0,
+    hold_threshold: float = 0.0,
 ) -> Iterator[TrackResult]:
     """Проходит по видео и выдаёт результат каждого завершившегося трека."""
     capture, info = open_video(path)
-    tracker = FaceTracker(settings)
+    tracker = FaceTracker(settings, hold_seconds=hold_seconds, hold_threshold=hold_threshold)
     step = max(1, round(info.fps / settings.process_fps))
     index = processed = 0
 
@@ -115,7 +117,7 @@ def analyze_video(
                 break
             time = index / info.fps
             faces = [(face, face_quality(frame, face)) for face in engine.detect(frame)]
-            yield from finish(tracker.update(frame, faces, time))
+            yield from finish(tracker.update(frame, faces, time, engine))
             index += 1
             processed += 1
             if on_progress:

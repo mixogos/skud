@@ -225,7 +225,12 @@ class CameraStream:
             pace = 1.0 / fps if fps and 0 < fps <= 240 else 0.04
         reader = _Reader(capture, pace)
         reader.start()
-        tracker = FaceTracker(self.settings)
+        with SessionLocal() as db:
+            rt = get_settings(db)
+        # Удержание человека: трек держится hold_seconds даже когда лицо на время пропало.
+        tracker = FaceTracker(
+            self.settings, hold_seconds=rt.dedup_window, hold_threshold=rt.face_confidence_threshold
+        )
         self.analytics.new_session()
         self.people.new_session()
         self.security.new_session()
@@ -244,7 +249,7 @@ class CameraStream:
                     self.height, self.width = frame.shape[:2]
                     self._set_state("ONLINE")
                 faces = [(face, face_quality(frame, face)) for face in engine.detect(frame)]
-                finished = tracker.update(frame, faces, now)
+                finished = tracker.update(frame, faces, now, engine)
                 self._update_overlay(engine, tracker.tracks, now)
                 self.analytics.on_frame(
                     frame, [face for face, _ in faces], tracker.tracks + finished, now, started_wall + timedelta(seconds=now)

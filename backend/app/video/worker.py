@@ -14,6 +14,7 @@ from sqlalchemy import select
 from .. import episodes, events, models, storage
 from ..db import SessionLocal
 from ..recognition import engine as eng
+from ..settings_store import get_settings
 from .processor import VideoError, analyze_video
 from .tracker import StreamSettings
 
@@ -42,6 +43,7 @@ def process_video(video_id: int) -> None:
         started = video.started_date
         group_id = video.camera_group_id
         settings = StreamSettings(**(video.stream_settings or {}))
+        rt = get_settings(db)
         state = {"progress": 0.0, "frames": 0, "saved": time.monotonic(), "cancel": False}
 
         def save_progress(force: bool = False) -> None:
@@ -61,7 +63,8 @@ def process_video(video_id: int) -> None:
         try:
             engine = eng.get_engine()
             for result in analyze_video(
-                storage.video_path(video.file_name), engine, settings, on_progress, lambda: state["cancel"]
+                storage.video_path(video.file_name), engine, settings, on_progress, lambda: state["cancel"],
+                hold_seconds=rt.dedup_window, hold_threshold=rt.face_confidence_threshold,
             ):
                 event = events.register_track(
                     db,
