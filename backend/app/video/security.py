@@ -14,7 +14,7 @@ import cv2
 import numpy as np
 from sqlalchemy import delete, select
 
-from .. import models, storage
+from .. import models, storage, webhooks
 from ..db import SessionLocal
 from ..notifications import broadcaster
 from ..recognition import engine as eng
@@ -283,8 +283,10 @@ class SecurityWatcher:
             db.flush()
             storage.save_security_image(event.id, eng.encode_jpeg(_fit(frame, EVENT_IMAGE_SIDE), 80))
             db.commit()
+            payload = _event_dict(event)
             log.info("Охранная тревога [%s] камера %s: %s", rule.type, self.camera_id, message)
-            broadcaster.publish("security_alarm", _event_dict(event))
+            broadcaster.publish("security_alarm", payload)
+            webhooks.dispatch_security(db, payload)
 
 
 def _fit(image: np.ndarray, max_side: int) -> np.ndarray:

@@ -15,14 +15,28 @@ from ..schemas import Page
 router = APIRouter(prefix="/webhooks", tags=["Вебхуки"])
 
 
+RuleType = Literal["intrusion", "loitering", "crowd", "tampering"]
+Severity = Literal["alarm", "warning"]
+
+
+class SecurityFilters(BaseModel):
+    """Условия для охранных тревог. Незаданное — не ограничивает."""
+
+    rule_types: list[RuleType] = []
+    severity: list[Severity] = []
+
+
 class WebhookFilters(BaseModel):
     """Условия отправки. Незаданное условие не ограничивает."""
 
+    # Какие виды событий отправлять: проходы/лица и/или охранные тревоги. Пусто — только проходы.
+    events: list[Literal["face", "security"]] = []
     matched: bool | None = None
     watch_lists: list[int] = []
     camera_groups: list[int] = []
     cameras: list[int] = []
     access: Literal["granted", "denied"] | None = None
+    security: SecurityFilters = SecurityFilters()
 
 
 def _check_url(value: str) -> str:

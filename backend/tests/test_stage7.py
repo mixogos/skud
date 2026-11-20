@@ -13,7 +13,7 @@ from app.db import SessionLocal
 from app.recognition import engine as eng
 from app.recognition import model_store
 from app.video.processor import TrackResult
-from app.webhooks import matches, sender
+from app.webhooks import matches, matches_security, sender
 from conftest import GROUP_PHOTO, login
 
 needs_models = pytest.mark.skipif(
@@ -369,6 +369,51 @@ def test_webhook_retries(client, admin, monkeypatch):
         assert listed["last_status"] == "error" and "500" in listed["last_error"] and flaky.fail == 2   # ровно три попытки
     finally:
         flaky.close()
+
+
+def test_security_webhook_matching():
+    event = {"camera_id": 7, "rule_type": "intrusion", "severity": "alarm"}
+    # Старый вебхук (без видов) охранные тревоги не получает, а проходы — получает.
+    assert not matches_security({}, event) and not matches_security({"events": ["face"]}, event)
+    assert matches_security({"events": ["security"]}, event)
+    assert matches_security({"events": ["face", "security"]}, event)
+    # Охранный вебхук не получает проходы.
+    face = {"matched": True, "matched_lists": [], "camera_group_id": 1, "camera_id": 7, "access": "granted"}
+    assert not matches({"events": ["security"]}, face) and matches({"events": ["face", "security"]}, face)
+    # Фильтры по камере, типу правила и важности.
+    assert matches_security({"events": ["security"], "cameras": [7]}, event)
+    assert not matches_security({"events": ["security"], "cameras": [8]}, event)
+    assert matches_security({"events": ["security"], "security": {"rule_types": ["intrusion"]}}, event)
+    assert not matches_security({"events": ["security"], "security": {"rule_types": ["crowd"]}}, event)
+    assert matches_security({"events": ["security"], "security": {"severity": ["alarm"]}}, event)
+    assert not matches_security({"events": ["security"], "security": {"severity": ["warning"]}}, event)
+
+
+def test_security_webhook_api_and_dispatch(client, admin, receiver):
+    from app import webhooks
+    from app.db import SessionLocal
+
+    # Неизвестный тип правила и важность отклоняются валидацией.
+    assert client.post("/webhooks/", headers=admin, json={"name": "X", "url": receiver.url,
+        "filters": {"events": ["security"], "security": {"rule_types": ["boom"]}}}).status_code == 422
+    sec = client.post("/webhooks/", headers=admin, json={"name": "Охрана", "url": receiver.url + "?sec",
+        "filters": {"events": ["security"], "security": {"rule_types": ["intrusion"]}}})
+    assert sec.status_code == 201 and sec.json()["filters"]["events"] == ["security"]
+    assert sec.json()["filters"]["security"]["rule_types"] == ["intrusion"]
+    client.post("/webhooks/", headers=admin, json={"name": "Проходы", "url": receiver.url + "?face"})  # охрану не получает
+
+    event = {"id": 42, "camera_id": 3, "rule_type": "intrusion", "severity": "alarm", "rule_name": "Зона", "message": "вход"}
+    with SessionLocal() as db:
+        assert webhooks.dispatch_security(db, event) == 1      # только охранный вебхук
+    assert sender.wait_idle()
+    assert len(receiver.requests) == 1
+    headers, body = receiver.requests[-1]
+    assert headers["X-Skud-Event"] == "security_alarm" and json.loads(body)[0]["id"] == 42
+
+    # Тревога типа, не входящего в фильтр, не уходит.
+    with SessionLocal() as db:
+        assert webhooks.dispatch_security(db, {**event, "rule_type": "crowd", "severity": "warning"}) == 0
+    assert sender.wait_idle() and len(receiver.requests) == 1
 
 
 # --- Отчёт о рабочем времени ---

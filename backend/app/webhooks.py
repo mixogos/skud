@@ -17,9 +17,17 @@ from .db import SessionLocal
 log = logging.getLogger("skud.webhooks")
 
 
+def _event_kinds(filters: dict | None) -> set:
+    """Какие виды событий получает вебхук. Пусто — только проходы/лица (для старых вебхуков)."""
+    kinds = (filters or {}).get("events")
+    return set(kinds) if kinds else {"face"}
+
+
 def matches(filters: dict | None, event: dict) -> bool:
-    """Подходит ли событие под условия вебхука. Пустые условия — подходит любое событие."""
+    """Подходит ли событие прохода под условия вебхука. Пустые условия — подходит любое событие."""
     f = filters or {}
+    if "face" not in _event_kinds(f):
+        return False
     if f.get("matched") is not None and event["matched"] != f["matched"]:
         return False
     if f.get("watch_lists") and not set(f["watch_lists"]) & set(event["matched_lists"]):
@@ -29,6 +37,21 @@ def matches(filters: dict | None, event: dict) -> bool:
     if f.get("cameras") and event["camera_id"] not in f["cameras"]:
         return False
     if f.get("access") and event.get("access") != f["access"]:
+        return False
+    return True
+
+
+def matches_security(filters: dict | None, event: dict) -> bool:
+    """Подходит ли охранная тревога под условия вебхука."""
+    f = filters or {}
+    if "security" not in _event_kinds(f):
+        return False
+    if f.get("cameras") and event.get("camera_id") not in f["cameras"]:
+        return False
+    sec = f.get("security") or {}
+    if sec.get("rule_types") and event["rule_type"] not in sec["rule_types"]:
+        return False
+    if sec.get("severity") and event["severity"] not in sec["severity"]:
         return False
     return True
 
@@ -121,10 +144,20 @@ sender = WebhookSender()
 
 
 def dispatch(db: DbSession, event_type: str, event: dict) -> int:
-    """Ставит событие в очередь отправки всем подходящим активным вебхукам."""
+    """Ставит событие прохода в очередь отправки всем подходящим активным вебхукам."""
     count = 0
     for hook in db.scalars(select(models.Webhook).where(models.Webhook.active)):
         if matches(hook.filters, event):
             sender.enqueue(hook.id, event_type, [event])
+            count += 1
+    return count
+
+
+def dispatch_security(db: DbSession, event: dict) -> int:
+    """Ставит охранную тревогу в очередь отправки всем подходящим активным вебхукам."""
+    count = 0
+    for hook in db.scalars(select(models.Webhook).where(models.Webhook.active)):
+        if matches_security(hook.filters, event):
+            sender.enqueue(hook.id, "security_alarm", [event])
             count += 1
     return count
